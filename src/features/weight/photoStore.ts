@@ -29,11 +29,15 @@ const COLLECTION = 'weightPhoto';
 const UPLOAD_TIMEOUT_MS = 30000;
 /** Um documento do Firestore aceita ate 1 MiB; a foto vai em base64 e precisa caber com folga. */
 const MAX_BASE64_LENGTH = 900000;
+// Da melhor qualidade para a menor: usa a primeira que couber no limite do documento. 1440 px de largura
+// dao 1080 px por metade na imagem de antes e depois sem precisar ampliar a foto.
 const ENCODE_ATTEMPTS = [
-  { width: 1080, compress: 0.6 },
-  { width: 900, compress: 0.5 },
-  { width: 720, compress: 0.4 },
-  { width: 540, compress: 0.3 },
+  { width: 1440, compress: 0.85 },
+  { width: 1440, compress: 0.75 },
+  { width: 1200, compress: 0.75 },
+  { width: 1080, compress: 0.65 },
+  { width: 900, compress: 0.55 },
+  { width: 720, compress: 0.45 },
 ];
 
 const PHOTO_FIELDS = ['photoFrontUri', 'photoSideUri', 'photoBackUri'] as const;
@@ -60,9 +64,11 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 async function encodeForUpload(sourceUri: string): Promise<string> {
+  // Foto menor que a largura alvo nao e ampliada (so ganharia peso, nao nitidez).
+  const original = await ImageManipulator.manipulate(sourceUri).renderAsync();
   for (const { width, compress } of ENCODE_ATTEMPTS) {
     const context = ImageManipulator.manipulate(sourceUri);
-    context.resize({ width });
+    if (original.width > width) context.resize({ width, height: null });
     const image = await context.renderAsync();
     const result = await image.saveAsync({ format: SaveFormat.JPEG, compress, base64: true });
     if (result.base64 && result.base64.length <= MAX_BASE64_LENGTH) return result.base64;

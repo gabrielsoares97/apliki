@@ -6,7 +6,7 @@
  * (veja AI_POLICY.md).
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, PixelRatio, LayoutChangeEvent } from 'react-native';
 import { ProgressPhoto } from './ProgressPhoto';
 import { Alert } from '../../shared/dialog';
 import { showToast } from '../../shared/toast';
@@ -30,9 +30,11 @@ const ANGLES: { key: PhotoAngle; label: string }[] = [
   { key: 'back', label: 'Costas' },
 ];
 
-/** Imagem gerada: duas fotos 3:4 lado a lado, cada uma com metade exata da largura. */
-const EXPORT_WIDTH = 1620;
-const EXPORT_HEIGHT = 1080;
+/** Imagem gerada: duas fotos 3:4 lado a lado (1080 x 1440 px cada), sem ampliar as fotos guardadas. */
+const EXPORT_WIDTH = 2160;
+const EXPORT_HEIGHT = 1440;
+/** A versão de exportação é montada fora da tela já no tamanho final, em pontos de layout. */
+const EXPORT_LAYOUT_WIDTH = EXPORT_WIDTH / PixelRatio.get();
 
 function angleUri(log: WeightLog, angle: PhotoAngle): string | null {
   if (angle === 'front') return log.photoFrontUri;
@@ -63,6 +65,11 @@ export function BeforeAfterScreen() {
   const [busy, setBusy] = useState(false);
   const [readyAngles, setReadyAngles] = useState<PhotoAngle[]>([]);
   const compositeRefs = useRef<Partial<Record<PhotoAngle, View | null>>>({});
+  const exportRefs = useRef<Partial<Record<PhotoAngle, View | null>>>({});
+  const [exportReadyAngles, setExportReadyAngles] = useState<PhotoAngle[]>([]);
+  // Espelho para o captureAngle esperar a versão em tamanho final sem depender de um render novo.
+  const exportReadyRef = useRef<PhotoAngle[]>([]);
+  exportReadyRef.current = exportReadyAngles;
 
   const load = useCallback(async () => {
     const all = await weightRepository.listAll();
@@ -83,6 +90,7 @@ export function BeforeAfterScreen() {
   // Trocar as datas recarrega as fotos: so libera o download de novo quando elas terminarem de abrir.
   useEffect(() => {
     setReadyAngles([]);
+    setExportReadyAngles([]);
   }, [beforeId, afterId]);
 
   const beforeLog = logsWithPhotos.find((l) => l.id === beforeId) ?? null;
@@ -98,11 +106,31 @@ export function BeforeAfterScreen() {
     setReadyAngles((prev) => (prev.includes(angle) ? prev : [...prev, angle]));
   }, []);
 
-  /** Gera a imagem 50/50 do angulo: so as duas fotos com as etiquetas, sem o resto da tela. */
+  const markExportReady = useCallback((angle: PhotoAngle) => {
+    setExportReadyAngles((prev) => (prev.includes(angle) ? prev : [...prev, angle]));
+  }, []);
+
+  /**
+   * Gera a imagem 50/50 do angulo a partir da versao montada fora da tela no tamanho final, entao nada e
+   * ampliado. Se ela ainda nao abriu as fotos (ou falhar), usa a previa da tela como antes.
+   */
   async function captureAngle(angle: PhotoAngle): Promise<string> {
+    const options = { format: 'jpg' as const, quality: 0.92, width: EXPORT_WIDTH, height: EXPORT_HEIGHT };
+    // A versão grande pode levar um instante a mais para abrir as fotos: espera até ~4 s antes de desistir dela.
+    for (let i = 0; i < 20 && !exportReadyRef.current.includes(angle); i++) {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+    const exportView = exportRefs.current[angle];
+    if (exportView && exportReadyRef.current.includes(angle)) {
+      try {
+        return await captureRef(exportView, options);
+      } catch {
+        // segue para a previa
+      }
+    }
     const view = compositeRefs.current[angle];
     if (!view) throw new Error('Imagem indisponível.');
-    return captureRef(view, { format: 'jpg', quality: 0.95, width: EXPORT_WIDTH, height: EXPORT_HEIGHT });
+    return captureRef(view, options);
   }
 
   async function handleDownload(angles: PhotoAngle[]) {
@@ -231,6 +259,28 @@ export function BeforeAfterScreen() {
         )}
       </ScrollView>
 
+      {/* Versões de exportação, fora da área visível: mesmo desenho da prévia, já no tamanho final. */}
+      {beforeLog && afterLog && (
+        <View style={styles.exportLayer} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          {comparableAngles.map((key) => {
+            const beforeUri = angleUri(beforeLog, key);
+            const afterUri = angleUri(afterLog, key);
+            return (
+              <Composite
+                key={`${key}|${beforeUri}|${afterUri}`}
+                width={EXPORT_LAYOUT_WIDTH}
+                viewRef={(view) => {
+                  exportRefs.current[key] = view;
+                }}
+                before={{ uri: beforeUri, log: beforeLog }}
+                after={{ uri: afterUri, log: afterLog }}
+                onReady={() => markExportReady(key)}
+              />
+            );
+          })}
+        </View>
+      )}
+
       <ModalSheet visible={pickerFor !== null} title="Escolha a data" onClose={() => setPickerFor(null)}>
         {logsWithPhotos.map((log) => (
           <Pressable
@@ -260,37 +310,79 @@ interface CompositeProps {
   after: CompositeSide;
   /** Chamado quando as duas fotos terminaram de abrir (a imagem ja pode ser gerada). */
   onReady: () => void;
+  /** Largura fixa em pontos (versao de exportacao). Sem ela, ocupa a largura disponivel (previa). */
+  width?: number;
+}
+
+/**
+ * Etiquetas proporcionais a largura de cada metade, para a previa e a imagem baixada ficarem identicas.
+ * Tamanhos discretos: o destaque e a foto, nao o texto.
+ */
+function overlaySizes(halfWidth: number) {
+  const u = halfWidth / 100;
+  return {
+    tag: { top: 3 * u, paddingHorizontal: 2.6 * u, paddingVertical: 0.9 * u },
+    tagText: { fontSize: 3.4 * u, letterSpacing: 0.5 * u },
+    caption: { bottom: 3 * u, paddingHorizontal: 2.4 * u, paddingVertical: 0.9 * u },
+    captionText: { fontSize: 3 * u },
+  };
 }
 
 /** A imagem que e baixada: as duas fotos ocupando tudo, metade cada, com "ANTES" e "AGORA" por cima. */
-function Composite({ viewRef, before, after, onReady }: CompositeProps) {
+function Composite({ viewRef, before, after, onReady, width }: CompositeProps) {
   const loaded = useRef(0);
+  const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
   const handleLoaded = () => {
     loaded.current += 1;
     if (loaded.current >= 2) onReady();
   };
 
+  const totalWidth = width ?? measuredWidth;
+  const dividerWidth = totalWidth ? Math.max(1, totalWidth * 0.002) : 1;
+  const sizes = totalWidth ? overlaySizes((totalWidth - dividerWidth) / 2) : null;
+
   return (
-    <View ref={viewRef} collapsable={false} style={styles.composite}>
-      <CompositeHalf tag="ANTES" side={before} onLoaded={handleLoaded} />
-      <View style={styles.divider} />
-      <CompositeHalf tag="AGORA" side={after} onLoaded={handleLoaded} />
+    <View
+      ref={viewRef}
+      collapsable={false}
+      style={[styles.composite, width ? { width, height: (width * 2) / 3 } : null]}
+      onLayout={width ? undefined : (e: LayoutChangeEvent) => setMeasuredWidth(e.nativeEvent.layout.width)}
+    >
+      <CompositeHalf tag="ANTES" side={before} sizes={sizes} onLoaded={handleLoaded} />
+      <View style={[styles.divider, { width: dividerWidth }]} />
+      <CompositeHalf tag="AGORA" side={after} sizes={sizes} onLoaded={handleLoaded} />
     </View>
   );
 }
 
-function CompositeHalf({ tag, side, onLoaded }: { tag: string; side: CompositeSide; onLoaded: () => void }) {
+function CompositeHalf({
+  tag,
+  side,
+  sizes,
+  onLoaded,
+}: {
+  tag: string;
+  side: CompositeSide;
+  sizes: ReturnType<typeof overlaySizes> | null;
+  onLoaded: () => void;
+}) {
   return (
     <View style={styles.half}>
       <ProgressPhoto photoRef={side.uri} style={styles.halfImage} emptyLabel="Sem foto" onReady={onLoaded} />
-      <View style={styles.tag}>
-        <Text style={styles.tagText}>{tag}</Text>
-      </View>
-      <View style={styles.caption}>
-        <Text style={styles.captionText}>
-          {formatShortDatePt(new Date(side.log.dateTime))} · {side.log.weightKg} kg
-        </Text>
-      </View>
+      {sizes && (
+        <>
+          <View style={[styles.tag, sizes.tag]}>
+            <Text style={[styles.tagText, sizes.tagText]} allowFontScaling={false}>
+              {tag}
+            </Text>
+          </View>
+          <View style={[styles.caption, sizes.caption]}>
+            <Text style={[styles.captionText, sizes.captionText]} allowFontScaling={false}>
+              {formatShortDatePt(new Date(side.log.dateTime))} · {side.log.weightKg} kg
+            </Text>
+          </View>
+        </>
+      )}
     </View>
   );
 }
@@ -338,19 +430,14 @@ const styles = StyleSheet.create({
   composite: { flexDirection: 'row', width: '100%', aspectRatio: 3 / 2, backgroundColor: '#000000' },
   half: { flex: 1, overflow: 'hidden' },
   halfImage: { width: '100%', height: '100%' },
-  divider: { width: 2, backgroundColor: '#FFFFFF' },
-  tag: {
-    position: 'absolute',
-    top: spacing.sm,
-    alignSelf: 'center',
-    backgroundColor: 'rgba(15,23,42,0.7)',
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.sm + 4,
-    paddingVertical: 3,
-  },
-  tagText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800', letterSpacing: 1.5 },
-  caption: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15,23,42,0.55)', paddingVertical: 3, alignItems: 'center' },
-  captionText: { color: '#FFFFFF', fontSize: 11, fontWeight: '600' },
+  divider: { backgroundColor: '#FFFFFF' },
+  // Tamanhos de fonte e espacos vem de overlaySizes(); aqui so a aparencia.
+  tag: { position: 'absolute', alignSelf: 'center', backgroundColor: 'rgba(15,23,42,0.6)', borderRadius: radius.full },
+  tagText: { color: '#FFFFFF', fontWeight: '800' },
+  caption: { position: 'absolute', alignSelf: 'center', backgroundColor: 'rgba(15,23,42,0.6)', borderRadius: radius.full },
+  captionText: { color: '#FFFFFF', fontWeight: '600' },
+  // Fora da area visivel, mas montada (o captureRef precisa da view desenhada).
+  exportLayer: { position: 'absolute', left: -100000, top: 0 },
   missingNote: { ...typography.caption, marginTop: spacing.sm },
   dateRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: 44, paddingVertical: spacing.sm + 2, borderBottomWidth: 1, borderBottomColor: colors.border },
   dateRowWeight: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },

@@ -86,7 +86,7 @@ export function WeightFormModal({ visible, onClose, onSaved, editingWeight }: We
   async function pickPhoto(angle: PhotoAngle) {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) return;
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.6 });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
     if (!result.canceled && result.assets[0]) photoSetters[angle](result.assets[0].uri);
   }
 
