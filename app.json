@@ -1,0 +1,67 @@
+{
+  "expo": {
+    "name": "apliKI",
+    "slug": "monjuapp",
+    "owner": "gabrielgraciesoares",
+    "scheme": "monju",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.monju.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.USE_EXACT_ALARM"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-sharing",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-notifications",
+        {
+          "color": "#2FAE6B"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O apliKI usa suas fotos para anexar registros de progresso ao seu histórico de peso."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "savePhotosPermission": "O apliKI salva na sua galeria as imagens de antes e depois que você baixar.",
+          "granularPermissions": ["photo"]
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "O apliKI usa Face ID para proteger o acesso aos seus dados de saúde."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "c04ec2c6-df3b-4345-9488-87ff916c8c89"
+      }
+    }
+  }
+}

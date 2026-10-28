@@ -1,0 +1,102 @@
+LICENÇA DE CÓDIGO-FONTE DISPONÍVEL DO apliKI
+Versão 1.0 — outubro de 2026
+
+Copyright (c) 2026 Gabriel Soares (github.com/gabrielsoares97). Todos os direitos reservados.
+
+Este NÃO é um software livre nem de código aberto. O código-fonte é disponibilizado para que outras pessoas
+possam ver, estudar e personalizar o aplicativo apliKI, nas condições abaixo. Qualquer uso fora delas é proibido.
+
+
+1. DEFINIÇÕES
+
+"Software": o código-fonte, os arquivos de configuração, as imagens e a documentação deste repositório.
+"Serviço apliKI": os servidores, bancos de dados, regras de segurança, funções e APIs operados pelo titular
+(incluindo o projeto Firebase e o serviço de IA usados pelo aplicativo), que NÃO fazem parte deste repositório.
+"Assinatura": o acesso pago (ou o teste grátis concedido pelo titular) ao Serviço apliKI, vinculado a uma conta.
+"Versão personalizada": qualquer cópia do Software com alterações.
+"Sistema de IA": modelo de linguagem, assistente ou agente de programação, ferramenta de geração de código ou
+qualquer sistema automatizado de aprendizado de máquina.
+
+
+2. O QUE VOCÊ PODE FAZER
+
+Desde que cumpra todas as condições desta licença, você pode:
+  a) ver e estudar o Software;
+  b) criar um fork no GitHub e uma Versão personalizada, alterando a aparência, os textos, a organização das
+     telas e a experiência de uso;
+  c) compilar e usar a Versão personalizada no seu próprio aparelho;
+  d) enviar sugestões e contribuições ao repositório original (pull requests). Ao enviar uma contribuição,
+     você concede ao titular o direito perpétuo, gratuito e irrevogável de usá-la, alterá-la e distribuí-la.
+
+
+3. CONDIÇÕES OBRIGATÓRIAS
+
+  a) Assinatura: toda pessoa que usar o Software ou qualquer Versão personalizada precisa ter uma Assinatura
+     ativa do apliKI, contratada diretamente com o titular.
+  b) Serviço oficial: o Software e as Versões personalizadas só podem se conectar ao Serviço apliKI oficial.
+     É proibido apontá-los para outro backend ou recriar, imitar ou substituir o Serviço apliKI.
+  c) Verificações intactas: é proibido remover, desativar, contornar ou enganar a verificação de assinatura,
+     os limites de uso, a autenticação ou qualquer mecanismo de proteção do Software ou do Serviço apliKI.
+  d) Avisos: mantenha esta licença, os avisos de direitos autorais, o aviso de saúde e os contatos de
+     assinatura em todas as cópias e Versões personalizadas.
+  e) Identificação: uma Versão personalizada não pode se apresentar como o aplicativo oficial apliKI.
+
+
+4. O QUE É PROIBIDO
+
+  a) Vender, alugar, sublicenciar, distribuir ou publicar o Software ou Versões personalizadas, inclusive em
+     lojas de aplicativos (Google Play, App Store e outras), sem autorização prévia e por escrito do titular.
+  b) Usar o Software, no todo ou em parte, para criar ou operar produto ou serviço concorrente.
+  c) Engenharia reversa: descompilar, desmontar, interceptar, sondar ou analisar o Serviço apliKI, suas APIs,
+     regras de segurança, prompts e respostas, ou o aplicativo compilado, com o objetivo de reproduzir a lógica
+     do Serviço, obter acesso não autorizado ou contornar a Assinatura — seja manualmente, seja com Sistemas de IA.
+  d) Cópia ou reescrita por Sistemas de IA: usar Sistemas de IA para copiar, traduzir, parafrasear, reescrever,
+     portar para outra linguagem ou plataforma, "limpar" ou gerar obras derivadas da lógica do Software (cálculos,
+     regras de negócio, planos de treino, lembretes, pontuação, fluxos e estrutura de dados) com o objetivo de
+     usá-la fora do apliKI, escapar das condições desta licença ou evitar a Assinatura. Código produzido assim é
+     considerado obra derivada do Software e continua sujeito a esta licença.
+  e) Treinamento de IA: usar o Software como dado de treinamento, ajuste fino (fine-tuning), avaliação ou
+     recuperação (RAG) de Sistemas de IA, sem autorização por escrito do titular.
+  f) Raspagem automatizada do repositório para os fins das alíneas (c), (d) ou (e).
+
+O uso de Sistemas de IA é permitido apenas como ferramenta de apoio para personalizar a aparência e a
+experiência de uso de uma Versão personalizada que cumpra todas as condições da seção 3.
+
+
+5. ENCERRAMENTO
+
+Qualquer violação encerra automaticamente, e sem aviso, todos os direitos concedidos por esta licença.
+O titular pode bloquear contas e acessos ao Serviço apliKI relacionados à violação e buscar as medidas legais
+cabíveis, incluindo as previstas na Lei nº 9.609/1998 (Lei de Software) e na Lei nº 9.610/1998 (Lei de
+Direitos Autorais).
+
+
+6. SAÚDE
+
+O apliKI é uma ferramenta de acompanhamento pessoal e NÃO substitui orientação médica, diagnóstico ou
+tratamento. Versões personalizadas devem manter esse aviso visível.
+
+
+7. SEM GARANTIAS
+
+O SOFTWARE É FORNECIDO "NO ESTADO EM QUE SE ENCONTRA", SEM GARANTIAS DE QUALQUER TIPO. EM NENHUMA HIPÓTESE
+O TITULAR SERÁ RESPONSÁVEL POR DANOS DECORRENTES DO USO OU DA IMPOSSIBILIDADE DE USO DO SOFTWARE OU DE
+VERSÕES PERSONALIZADAS.
+
+
+8. LEI APLICÁVEL
+
+Esta licença é regida pelas leis da República Federativa do Brasil. Para pedir autorizações que não estejam
+nesta licença, entre em contato pelo GitHub: github.com/gabrielsoares97.
+
+
+--------------------------------------------------------------------------------------------------------------
+ENGLISH SUMMARY (the Portuguese text above prevails)
+
+Source-available, NOT open source. You may view the code, fork it and customize the look and feel for your own
+use, only if every user holds an active apliKI subscription and the app keeps talking exclusively to the
+official apliKI backend. You may NOT: redistribute, sell or publish it in app stores; build a competing product;
+remove or bypass subscription checks or limits; reverse engineer the backend, APIs, rules or prompts; use AI
+systems (LLMs, coding agents, copilots) to copy, rewrite, translate, port or derive the app's logic for use
+outside apliKI or to avoid the subscription; or use this code to train, fine-tune, evaluate or ground AI models.
+Violations terminate the license automatically.
