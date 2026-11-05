@@ -14,6 +14,23 @@
 
 > ⚠️ O apliKI é uma ferramenta de acompanhamento pessoal e **não substitui orientação médica**.
 
+## Telas
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/login.jpg" alt="Tela de login do apliKI" width="240" /><br /><sub>Login</sub></td>
+    <td align="center"><img src="docs/screenshots/inicio.jpg" alt="Tela inicial com progresso e próxima aplicação" width="240" /><br /><sub>Início</sub></td>
+    <td align="center"><img src="docs/screenshots/peso.jpg" alt="Gráfico de evolução do peso e IMC" width="240" /><br /><sub>Peso</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/nutricao.jpg" alt="Diário de nutrição com calorias e macros" width="240" /><br /><sub>Nutrição</sub></td>
+    <td align="center"><img src="docs/screenshots/refeicao-ia.jpg" alt="Registro de refeição com cálculo por IA" width="240" /><br /><sub>Refeição com IA</sub></td>
+    <td align="center"><img src="docs/screenshots/treino.jpg" alt="Treinos e recuperação muscular" width="240" /><br /><sub>Treino</sub></td>
+  </tr>
+</table>
+
+<sub>Imagens da versão web, com uma conta e dados fictícios. A aparência no celular pode variar um pouco.</sub>
+
 ---
 
 ## Este repositório é source-available, não open source
