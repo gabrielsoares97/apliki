@@ -23,6 +23,7 @@ import { PhotoAngle, WeightLog } from '../../types';
 import { Alert } from '../../shared/dialog';
 import { ProgressPhoto } from './ProgressPhoto';
 import { deletePhoto, isCloudPhoto, uploadPhoto } from './photoStore';
+import { formatDecimalInput, formatKg } from '../../shared/format';
 
 interface WeightFormModalProps {
   visible: boolean;
@@ -36,6 +37,12 @@ const ANGLES: { key: PhotoAngle; label: string }[] = [
   { key: 'side', label: 'Lado' },
   { key: 'back', label: 'Costas' },
 ];
+
+/** Fora desta faixa o valor so pode ser erro de digitacao (ex.: 11 no lugar de 111). */
+const MIN_WEIGHT_KG = 30;
+const MAX_WEIGHT_KG = 350;
+/** Diferenca para o ultimo peso, em fracao dele, a partir da qual o app pede confirmacao antes de salvar. */
+const MAX_WEIGHT_CHANGE_RATIO = 0.15;
 
 export function WeightFormModal({ visible, onClose, onSaved, editingWeight }: WeightFormModalProps) {
   const user = useAppStore((s) => s.user);
@@ -60,14 +67,16 @@ export function WeightFormModal({ visible, onClose, onSaved, editingWeight }: We
 
   useEffect(() => {
     if (visible) {
-      setWeightKg(editingWeight ? String(editingWeight.weightKg) : user?.currentWeightKg ? String(user.currentWeightKg) : '');
+      setWeightKg(
+        editingWeight ? formatDecimalInput(editingWeight.weightKg) : user?.currentWeightKg ? formatDecimalInput(user.currentWeightKg) : ''
+      );
       setDateTime(editingWeight ? new Date(editingWeight.dateTime) : new Date());
       setPhotoFrontUri(editingWeight?.photoFrontUri ?? null);
       setPhotoSideUri(editingWeight?.photoSideUri ?? null);
       setPhotoBackUri(editingWeight?.photoBackUri ?? null);
-      setWaistCm(editingWeight?.waistCm ? String(editingWeight.waistCm) : '');
-      setHipCm(editingWeight?.hipCm ? String(editingWeight.hipCm) : '');
-      setArmCm(editingWeight?.armCm ? String(editingWeight.armCm) : '');
+      setWaistCm(editingWeight?.waistCm ? formatDecimalInput(editingWeight.waistCm) : '');
+      setHipCm(editingWeight?.hipCm ? formatDecimalInput(editingWeight.hipCm) : '');
+      setArmCm(editingWeight?.armCm ? formatDecimalInput(editingWeight.armCm) : '');
       setShowMeasurements(!!(editingWeight?.waistCm || editingWeight?.hipCm || editingWeight?.armCm));
     }
   }, [visible, user, editingWeight]);
@@ -90,9 +99,40 @@ export function WeightFormModal({ visible, onClose, onSaved, editingWeight }: We
     if (!result.canceled && result.assets[0]) photoSetters[angle](result.assets[0].uri);
   }
 
-  async function handleSave() {
+  function handleSave() {
     const weight = parseFloat(weightKg.replace(',', '.'));
     if (Number.isNaN(weight) || weight <= 0 || saving) return;
+
+    if (weight < MIN_WEIGHT_KG || weight > MAX_WEIGHT_KG) {
+      Alert.alert(
+        'Confira o peso',
+        `Você digitou ${formatKg(weight)}. Para evitar erros de digitação, o apliKI aceita pesos entre ${MIN_WEIGHT_KG} e ${MAX_WEIGHT_KG} kg. Corrija o valor e salve de novo.`
+      );
+      return;
+    }
+
+    // Compara com o ultimo peso conhecido. Ao editar sem mexer no valor (so foto ou data) nao ha o que confirmar,
+    // e um peso anterior que ja esta fora da faixa aceita (registro antigo errado) nao serve de referencia.
+    const previous = user?.currentWeightKg ?? null;
+    const unchanged = !!editingWeight && editingWeight.weightKg === weight;
+    const previousIsPlausible = previous !== null && previous >= MIN_WEIGHT_KG && previous <= MAX_WEIGHT_KG;
+    if (previousIsPlausible && !unchanged && Math.abs(weight - previous) / previous > MAX_WEIGHT_CHANGE_RATIO) {
+      Alert.alert(
+        'Esse peso está certo?',
+        `Seu último peso registrado é ${formatKg(previous)} e você digitou ${formatKg(weight)}. A diferença é grande: confira se não houve erro de digitação.`,
+        [
+          { text: 'Corrigir', style: 'cancel' },
+          { text: 'Salvar mesmo assim', onPress: () => saveWeight(weight) },
+        ]
+      );
+      return;
+    }
+
+    saveWeight(weight);
+  }
+
+  async function saveWeight(weight: number) {
+    if (saving) return;
 
     setSaving(true);
     try {
@@ -147,7 +187,7 @@ export function WeightFormModal({ visible, onClose, onSaved, editingWeight }: We
 
   return (
     <ModalSheet visible={visible} title={editingWeight ? 'Editar peso' : 'Registrar peso'} onClose={onClose}>
-      <TextField label="Peso (kg)" keyboardType="decimal-pad" value={weightKg} onChangeText={setWeightKg} placeholder="Ex: 84.6" />
+      <TextField label="Peso (kg)" keyboardType="decimal-pad" value={weightKg} onChangeText={setWeightKg} placeholder="Ex: 84,6" />
       <DateTimeField label="Data e hora" value={dateTime} onChange={setDateTime} />
 
       <Text style={typography.label}>Fotos de progresso (opcional)</Text>

@@ -13,6 +13,7 @@ import { ProgressBar } from '../../../shared/components/ProgressBar';
 import { CardLink } from '../../../shared/components/CardParts';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { formatDateTimePt, getCountdown } from '../../../shared/date';
+import { formatMg } from '../../../shared/format';
 import { Medication, DoseLog } from '../../../types';
 
 interface NextDoseCardProps {
@@ -60,7 +61,7 @@ export function NextDoseCard({ medication, lastDose, onRegisterDose, onChangeDat
       <ProgressBar progress={cycleProgress} style={{ marginTop: spacing.sm }} />
 
       <Text style={styles.detailText}>Próxima dose: {formatDateTimePt(nextDoseDate)}</Text>
-      {lastDose && <Text style={styles.detailText}>Última dose: {lastDose.doseMg}mg em {formatDateTimePt(new Date(lastDose.dateTime))}</Text>}
+      {lastDose && <Text style={styles.detailText}>Última dose: {formatMg(lastDose.doseMg)} em {formatDateTimePt(new Date(lastDose.dateTime))}</Text>}
       {medication.penDosesRemaining !== null && medication.penDosesRemaining !== undefined && medication.penDosesRemaining <= 1 && (
         <Text style={styles.penWarning}>⚠️ Caneta acabando — última dose disponível.</Text>
       )}

@@ -38,7 +38,7 @@
 Você pode ver o código, fazer um fork e **personalizar o app do seu jeito** (cores, telas, textos, layout). Mas:
 
 - o app **continua usando o servidor oficial do apliKI**: não dá para trocar o backend;
-- **toda pessoa que usar precisa de uma assinatura ativa** do apliKI (a primeira entrada ganha 7 dias de teste grátis);
+- **toda pessoa que usar precisa de uma assinatura ativa** do apliKI: 7 dias de teste grátis sem cartão, depois R$ 29,90/mês ou R$ 199,90/ano, assinados dentro do próprio app;
 - não é permitido redistribuir, vender, publicar em lojas, fazer engenharia reversa do servidor nem usar IA para copiar ou reescrever a lógica do app.
 
 Os detalhes estão em [LICENSE](LICENSE) e em [AI_POLICY.md](AI_POLICY.md).
@@ -69,6 +69,8 @@ npx expo start
 
 Escaneie o QR code com o Expo Go. Entre com a sua conta do apliKI (ou crie uma: ela já vem com 7 dias de teste). Quando o teste ou a assinatura vencer, o app mostra a tela para assinar.
 
+O login com Google usa um módulo nativo e a chave de assinatura do app oficial, então não funciona no Expo Go nem em builds próprios: no seu fork, entre com e-mail e senha.
+
 Testes e verificação de tipos:
 
 ```bash
@@ -86,7 +88,7 @@ npx tsc --noEmit
 | Abas e navegação | `src/navigation/RootNavigator.tsx` |
 | Ícone, logo e splash | `assets/` e `app.json` |
 
-Não altere `src/firebase/config.ts`, `src/firebase/subscription.ts`, `src/store/useSubscriptionStore.ts` nem `src/shared/subscriptionContact.ts`: eles ligam o app ao serviço oficial e à assinatura.
+Não altere `src/firebase/config.ts`, `src/firebase/api.ts`, `src/firebase/subscription.ts`, `src/firebase/billing.ts`, `src/store/useSubscriptionStore.ts`, `src/features/subscription/` nem `src/shared/subscriptionContact.ts`: eles ligam o app ao serviço oficial e à assinatura.
 
 ## Contribuindo
 
@@ -94,4 +96,4 @@ Pull requests com correções e melhorias de interface são bem-vindos. Ao envia
 
 ## Assinatura e contato
 
-Para assinar ou pedir autorização para algo que a licença não cobre: [github.com/gabrielsoares97](https://github.com/gabrielsoares97).
+Conheça e assine em [apliki.web.app](https://apliki.web.app). Para pedir autorização para algo que a licença não cobre: [github.com/gabrielsoares97](https://github.com/gabrielsoares97).

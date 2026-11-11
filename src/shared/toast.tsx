@@ -24,10 +24,14 @@ interface ToastRequest extends ToastOptions {
 
 let nextId = 1;
 let listener: ((toast: ToastRequest | null) => void) | null = null;
+/** Aviso pedido antes de o ToastHost existir (ex.: na volta do pagamento, com o app ainda carregando). */
+let pending: ToastRequest | null = null;
 
 /** Aviso leve que some sozinho; o mais novo substitui o anterior. Nao exige nenhum toque. */
 export function showToast(message: string, options: ToastOptions = {}) {
-  listener?.({ id: nextId++, message, ...options });
+  const toast = { id: nextId++, message, ...options };
+  if (listener) listener(toast);
+  else pending = toast;
 }
 
 const DEFAULT_DURATION = 3200;
@@ -56,6 +60,10 @@ export function ToastHost() {
       if (timerRef.current) clearTimeout(timerRef.current);
       setToast(next);
     };
+    if (pending) {
+      setToast(pending);
+      pending = null;
+    }
     return () => {
       listener = null;
       if (timerRef.current) clearTimeout(timerRef.current);

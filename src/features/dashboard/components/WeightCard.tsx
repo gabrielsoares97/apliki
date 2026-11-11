@@ -10,6 +10,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Card } from '../../../shared/components/Card';
 import { CardAction, CardLink } from '../../../shared/components/CardParts';
 import { colors, spacing, typography } from '../../../shared/theme';
+import { formatKg } from '../../../shared/format';
 
 interface WeightCardProps {
   currentWeightKg: number | null;
@@ -28,10 +29,10 @@ export function WeightCard({ currentWeightKg, goalWeightKg, onAdd, onPress }: We
         <CardAction label="+ Registrar" onPress={onAdd} />
       </View>
 
-      <Text style={typography.big}>{currentWeightKg != null ? `${currentWeightKg} kg` : '—'}</Text>
+      <Text style={typography.big}>{currentWeightKg != null ? formatKg(currentWeightKg) : '—'}</Text>
       {goalWeightKg != null && (
         <Text style={styles.subLine}>
-          Meta: {goalWeightKg} kg{diff != null && diff > 0 ? ` · faltam ${diff.toFixed(1)} kg` : diff != null && diff <= 0 ? ' · meta alcançada 🎉' : ''}
+          Meta: {formatKg(goalWeightKg)}{diff != null && diff > 0 ? ` · faltam ${formatKg(diff, 1)}` : diff != null && diff <= 0 ? ' · meta alcançada 🎉' : ''}
         </Text>
       )}
 

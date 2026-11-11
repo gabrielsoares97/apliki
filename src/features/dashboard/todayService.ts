@@ -11,6 +11,7 @@ import { syncCurrentWeightWithLogs } from '../weight/weightSync';
 import { syncMedicationWithDoses } from '../dose/doseSync';
 import { TodayEntry, TodayEntryKind } from '../../types';
 import { startOfDay, endOfDay, toDateKey, dateKeyOfIso, addDays, formatTimePt } from '../../shared/date';
+import { formatDecimal, formatKg, formatMg } from '../../shared/format';
 import { APPLICATION_SITE_LABELS, MEAL_CATEGORY_LABELS } from '../../shared/labels';
 
 /** Retorna o conjunto de dias (YYYY-MM-DD) em que houve pelo menos um registro de qualquer tipo. */
@@ -59,7 +60,7 @@ export async function getTodayEntries(): Promise<TodayEntry[]> {
     ...doses.map((d) => ({
       id: d.id,
       kind: 'dose' as TodayEntryKind,
-      title: `Dose aplicada — ${d.doseMg}mg`,
+      title: `Dose aplicada — ${formatMg(d.doseMg)}`,
       subtitle: d.applicationSite ? APPLICATION_SITE_LABELS[d.applicationSite] : formatTimePt(new Date(d.dateTime)),
       dateTime: d.dateTime,
       raw: d,
@@ -67,7 +68,7 @@ export async function getTodayEntries(): Promise<TodayEntry[]> {
     ...weights.map((w) => ({
       id: w.id,
       kind: 'weight' as TodayEntryKind,
-      title: `Peso registrado — ${w.weightKg}kg`,
+      title: `Peso registrado — ${formatKg(w.weightKg)}`,
       subtitle: formatTimePt(new Date(w.dateTime)),
       dateTime: w.dateTime,
       raw: w,
@@ -84,15 +85,15 @@ export async function getTodayEntries(): Promise<TodayEntry[]> {
       id: m.id,
       kind: 'meal' as TodayEntryKind,
       title: `${MEAL_CATEGORY_LABELS[m.category]} — ${m.name}`,
-      subtitle: `${m.calories} kcal · ${formatTimePt(new Date(m.dateTime))}`,
+      subtitle: `${formatDecimal(m.calories)} kcal · ${formatTimePt(new Date(m.dateTime))}`,
       dateTime: m.dateTime,
       raw: m,
     })),
     ...activities.map((a) => ({
       id: a.id,
       kind: 'activity' as TodayEntryKind,
-      title: `${a.type} — ${a.durationMin}min`,
-      subtitle: `${a.calories} kcal · ${formatTimePt(new Date(a.dateTime))}`,
+      title: `${a.type} — ${formatDecimal(a.durationMin)} min`,
+      subtitle: `${formatDecimal(a.calories)} kcal · ${formatTimePt(new Date(a.dateTime))}`,
       dateTime: a.dateTime,
       raw: a,
     })),

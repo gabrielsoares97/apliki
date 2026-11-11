@@ -54,5 +54,3 @@ firebase-debug.log
 *service-account*.json
 *-adminsdk-*.json
 credentials.json
-google-services.json
-GoogleService-Info.plist

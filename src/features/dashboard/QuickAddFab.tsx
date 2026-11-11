@@ -26,11 +26,26 @@ interface Option {
   icon: string;
 }
 
+/** Altura que o "+" reserva para a barra de abas ao se posicionar (sem a area segura de baixo). */
 const TAB_BAR_HEIGHT = 64;
+/** Altura real da barra de abas padrao do React Navigation (sem a area segura de baixo). */
+const TAB_BAR_REAL_HEIGHT = 49;
+/** Diametro do botao "+". */
+export const FAB_SIZE = 58;
+/** Distancia entre o "+" e a altura reservada para a barra de abas. */
+const FAB_GAP = spacing.md;
 
 /**
- * Botao "+" global (aparece em todas as abas). Agua registra com um toque, sem formulario;
- * o resto abre o formulario correspondente ou leva ao treino.
+ * Espaco livre que toda tela rolavel com o "+" por cima precisa deixar no fim do conteudo
+ * (`paddingBottom` do `contentContainerStyle`): a faixa que o botao ocupa acima da barra de abas mais uma
+ * folga, para o ultimo item sempre poder rolar ate ficar inteiro acima do botao.
+ */
+export const FAB_CLEARANCE = TAB_BAR_HEIGHT - TAB_BAR_REAL_HEIGHT + FAB_GAP + FAB_SIZE + spacing.lg;
+
+/**
+ * Botao "+" global das abas de registro (Inicio, Nutricao, Treino e Doses; ver `FAB_VISIBLE_ROUTES` no
+ * RootNavigator). Agua registra com um toque, sem formulario; o resto abre o formulario correspondente
+ * ou leva ao treino.
  */
 export function QuickAddFab() {
   const navigation = useNavigation<any>();
@@ -61,7 +76,7 @@ export function QuickAddFab() {
     }
   }
 
-  const fabBottom = insets.bottom + TAB_BAR_HEIGHT + spacing.md;
+  const fabBottom = insets.bottom + TAB_BAR_HEIGHT + FAB_GAP;
 
   return (
     <>
@@ -71,7 +86,7 @@ export function QuickAddFab() {
 
       <Modal visible={menuOpen} transparent animationType="fade" statusBarTranslucent onRequestClose={() => setMenuOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setMenuOpen(false)} accessibilityLabel="Fechar menu">
-          <View style={[styles.menu, { marginBottom: fabBottom + 58 + spacing.sm }]}>
+          <View style={[styles.menu, { marginBottom: fabBottom + FAB_SIZE + spacing.sm }]}>
             {options.map((opt) => (
               <Pressable
                 key={opt.kind}
@@ -103,8 +118,8 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: spacing.lg,
-    width: 58,
-    height: 58,
+    width: FAB_SIZE,
+    height: FAB_SIZE,
     borderRadius: radius.full,
     backgroundColor: colors.primary,
     alignItems: 'center',

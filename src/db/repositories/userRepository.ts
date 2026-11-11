@@ -50,7 +50,9 @@ export async function getUser(): Promise<User | null> {
 }
 
 /** Cria o documento de perfil na primeira vez que um usuário autenticado é visto (chamar após login/cadastro). */
-export async function ensureUserDoc(uid: string, name: string): Promise<User> {
+export async function ensureUserDoc(uid: string, rawName: string): Promise<User> {
+  // As regras do Firestore aceitam nome de até 80 caracteres (contas do Google podem trazer nomes longos).
+  const name = rawName.trim().slice(0, 80);
   const ref = userDoc(uid);
   const existing = await getDoc(ref);
   if (existing.exists()) {

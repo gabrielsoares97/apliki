@@ -22,7 +22,14 @@ export interface Subscription {
   status: SubscriptionStatus;
   plan: string;
   expiresAt: Timestamp | null;
+  /** Quem concedeu: 'stripe' (assinatura paga), 'manual' (liberada pelo apliKI) ou ausente no teste grátis. */
+  provider?: 'stripe' | 'manual' | 'app';
+  /** Assinatura paga que não vai renovar: o acesso termina em expiresAt. */
+  cancelAtPeriodEnd?: boolean;
 }
+
+/** Versão dos Termos de Uso aceitos no cadastro (muda quando os termos mudarem). */
+export const TERMS_VERSION = '2026-11';
 
 /** Duração do teste grátis criado na primeira entrada. As regras aceitam no máximo 7 dias. */
 const TRIAL_MS = 7 * 24 * 60 * 60 * 1000 - 60 * 60 * 1000;
@@ -89,6 +96,21 @@ export function subscribeToSubscription(
 }
 
 /**
+ * Acompanha billing/{uid} (espelho da Stripe gravado pelo servidor) e avisa se há assinatura paga em andamento.
+ * Serve para oferecer "Gerenciar assinatura" mesmo quando o acesso atual vem de uma liberação manual.
+ */
+export function subscribeToPaidSubscription(uid: string, callback: (hasPaid: boolean) => void): () => void {
+  return onSnapshot(
+    doc(db, 'billing', uid),
+    (snap) => {
+      const status = snap.exists() ? (snap.data().stripeStatus as string | undefined) : undefined;
+      callback(status === 'active' || status === 'trialing' || status === 'past_due');
+    },
+    () => callback(false)
+  );
+}
+
+/**
  * Mantém accounts/{uid} (nome, e-mail, último acesso, aparelho) para o painel administrativo listar as contas.
  * Nenhum dado de saúde vai para esse documento.
  */
@@ -101,11 +123,13 @@ export async function touchAccount(user: FirebaseUser, name: string): Promise<vo
     lastSeenAt: serverTimestamp(),
     platform: Platform.OS,
     appVersion: Constants.expoConfig?.version ?? null,
+    authProvider: user.providerData.some((p) => p.providerId === 'google.com') ? 'google' : 'password',
   };
   const existing = await getDoc(ref);
   if (existing.exists()) {
     await updateDoc(ref, fields);
   } else {
-    await setDoc(ref, { ...fields, createdAt: serverTimestamp() });
+    // Criar a conta é aceitar os Termos de Uso mostrados no cadastro; fica registrado qual versão.
+    await setDoc(ref, { ...fields, termsVersion: TERMS_VERSION, createdAt: serverTimestamp() });
   }
 }

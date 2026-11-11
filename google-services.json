@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1086172498761",
+    "project_id": "monjau-aaae3",
+    "storage_bucket": "monjau-aaae3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1086172498761:android:170a0b61fafb73e7bc2898",
+        "android_client_info": {
+          "package_name": "com.monju.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1086172498761-er9lqble1mf0nor3tt1qaba3d991hq6o.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.monju.app",
+            "certificate_hash": "3470bd301f2ab6bcf0994eb1b2b1818c44968707"
+          }
+        },
+        {
+          "client_id": "1086172498761-cd5h0rapandalosrm98u6ir89v09rne3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCewqmkuyRYmQq-G34O46CoIAUVHchX898"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1086172498761-cd5h0rapandalosrm98u6ir89v09rne3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

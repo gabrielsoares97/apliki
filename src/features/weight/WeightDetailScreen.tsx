@@ -15,13 +15,18 @@ import { Card } from '../../shared/components/Card';
 import { BmiGauge } from '../../shared/components/BmiGauge';
 import { Button } from '../../shared/components/Button';
 import { EmptyState } from '../../shared/components/EmptyState';
+import { IconButton } from '../../shared/components/IconButton';
 import { ScreenState } from '../../shared/components/ScreenState';
+import { Alert } from '../../shared/dialog';
 import { colors, radius, spacing, typography } from '../../shared/theme';
 import { weightRepository } from '../../db/repositories';
 import { useAppStore } from '../../store/useAppStore';
 import { WeightLog } from '../../types';
 import { formatShortDatePt } from '../../shared/date';
 import { getBmiCategory } from '../../shared/bmi';
+import { thinChartLabels } from '../../shared/chartLabels';
+import { dotToComma, formatDecimal, formatKg } from '../../shared/format';
+import { deleteEntry } from '../dashboard/todayService';
 import { WeightFormModal } from './WeightFormModal';
 import { WeightDayDetailModal } from './WeightDayDetailModal';
 
@@ -31,6 +36,7 @@ export function WeightDetailScreen() {
   const navigation = useNavigation<any>();
   const user = useAppStore((s) => s.user);
   const version = useAppStore((s) => s.version);
+  const bump = useAppStore((s) => s.bump);
   const [logs, setLogs] = useState<WeightLog[]>([]);
   const [formOpen, setFormOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<WeightLog | null>(null);
@@ -65,9 +71,30 @@ export function WeightDetailScreen() {
 
   const chartLogs = logs.slice(-10);
   const chartData = {
-    labels: chartLogs.map((l) => formatShortDatePt(new Date(l.dateTime)).slice(0, 5)),
+    labels: thinChartLabels(chartLogs.map((l) => formatShortDatePt(new Date(l.dateTime)).slice(0, 5))),
     datasets: [{ data: chartLogs.length > 0 ? chartLogs.map((l) => l.weightKg) : [0] }],
   };
+  // O grafico vai da data mais antiga para a mais recente; o historico mostra primeiro o registro mais novo.
+  const historyLogs = [...logs].reverse();
+
+  /** So registros sem foto podem ser excluidos aqui, para ninguem perder uma foto de progresso sem querer. */
+  function handleDelete(log: WeightLog) {
+    Alert.alert('Excluir registro', `Excluir ${formatKg(log.weightKg)} de ${formatShortDatePt(new Date(log.dateTime))}?`, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Excluir',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteEntry('weight', log.id);
+            bump();
+          } catch {
+            Alert.alert('Não foi possível excluir', 'Verifique sua conexão com a internet e tente de novo.');
+          }
+        },
+      },
+    ]);
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -80,6 +107,7 @@ export function WeightDetailScreen() {
                 width={screenWidth - spacing.lg * 2 - spacing.md * 2}
                 height={200}
                 yAxisSuffix="kg"
+                formatYLabel={dotToComma}
                 chartConfig={{
                   backgroundColor: colors.card,
                   backgroundGradientFrom: colors.card,
@@ -90,6 +118,7 @@ export function WeightDetailScreen() {
                   propsForDots: { r: '4', strokeWidth: '2', stroke: colors.primary },
                 }}
                 bezier
+                withVerticalLines={false}
                 style={{ borderRadius: radius.smd }}
               />
             ) : (
@@ -100,11 +129,11 @@ export function WeightDetailScreen() {
           <View style={styles.statsRow}>
             <Card style={styles.statCard}>
               <Text style={typography.label}>Peso atual</Text>
-              <Text style={typography.big}>{user?.currentWeightKg ?? '—'} kg</Text>
+              <Text style={typography.big}>{user?.currentWeightKg != null ? formatKg(user.currentWeightKg) : '—'}</Text>
             </Card>
             <Card style={styles.statCard}>
               <Text style={typography.label}>IMC</Text>
-              <Text style={typography.big}>{bmi ? bmi.toFixed(1) : '—'}</Text>
+              <Text style={typography.big}>{bmi ? formatDecimal(bmi) : '—'}</Text>
             </Card>
           </View>
 
@@ -134,22 +163,31 @@ export function WeightDetailScreen() {
               />
             </Card>
           )}
-          {logs.map((log) => {
+          {historyLogs.map((log) => {
             const thumbUri = log.photoFrontUri ?? log.photoSideUri ?? log.photoBackUri;
+            const dateLabel = formatShortDatePt(new Date(log.dateTime));
             return (
               <Pressable
                 key={log.id}
                 onPress={() => setSelectedLog(log)}
                 accessibilityRole="button"
-                accessibilityLabel={`${log.weightKg} kg em ${formatShortDatePt(new Date(log.dateTime))}`}
+                accessibilityLabel={`${formatKg(log.weightKg)} em ${dateLabel}`}
                 accessibilityHint="Abre os detalhes do dia"
               >
                 <Card style={styles.historyRow}>
                   {thumbUri && <ProgressPhoto photoRef={thumbUri} style={styles.thumb} />}
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.historyWeight}>{log.weightKg} kg</Text>
-                    <Text style={styles.historyDate}>{formatShortDatePt(new Date(log.dateTime))}</Text>
+                    <Text style={styles.historyWeight}>{formatKg(log.weightKg)}</Text>
+                    <Text style={styles.historyDate}>{dateLabel}</Text>
                   </View>
+                  {!thumbUri && (
+                    <IconButton
+                      icon="🗑️"
+                      iconSize={16}
+                      onPress={() => handleDelete(log)}
+                      accessibilityLabel={`Excluir ${formatKg(log.weightKg)} de ${dateLabel}`}
+                    />
+                  )}
                 </Card>
               </Pressable>
             );

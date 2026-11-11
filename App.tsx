@@ -6,7 +6,7 @@
  * (veja AI_POLICY.md).
  */
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Pressable, AppState } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Platform, Pressable, AppState } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
@@ -22,13 +22,14 @@ import { clearLocalPhotoCache, migrateLegacyPhotos } from './src/features/weight
 import { isFirebaseConfigured } from './src/firebase/config';
 import { AppLockGate } from './src/shared/components/AppLockGate';
 import { DialogHost } from './src/shared/dialog';
-import { ToastHost } from './src/shared/toast';
+import { ToastHost, showToast } from './src/shared/toast';
 import { initNotificationActions } from './src/notifications/notificationActions';
 import { clearPendingActions, flushPendingActions, saveQuickActionSettings } from './src/notifications/pendingActions';
 import { useSubscriptionStore } from './src/store/useSubscriptionStore';
 import { hasAccess, touchAccount } from './src/firebase/subscription';
 import { SubscriptionScreen } from './src/features/subscription/SubscriptionScreen';
 import { signOutUser } from './src/firebase/auth';
+import { syncBilling, syncBillingIfRecentlyOpened } from './src/firebase/billing';
 
 export default function App() {
   if (!isFirebaseConfigured) {
@@ -137,6 +138,8 @@ function AuthGate() {
     const subscription = AppState.addEventListener('change', (state) => {
       if (state !== 'active') return;
       useSubscriptionStore.getState().recompute();
+      // Voltou do pagamento ou do portal aberto no navegador: confere a assinatura sem esperar o aviso da Stripe.
+      syncBillingIfRecentlyOpened();
       if (useAppStore.getState().user && hasAccess(useSubscriptionStore.getState().status)) resyncNotifications();
     });
     // Com o app aberto em primeiro plano, confere o vencimento a cada minuto.
@@ -145,6 +148,18 @@ function AuthGate() {
       subscription.remove();
       clearInterval(timer);
     };
+  }, []);
+
+  // Volta do pagamento no navegador: a Stripe devolve para /?assinatura=ok. O acesso é liberado pelo servidor
+  // (o listener da assinatura acima percebe sozinho); aqui é só o aviso e a limpeza do endereço.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get('assinatura');
+    if (!result) return;
+    if (result === 'ok') syncBilling();
+    showToast(result === 'ok' ? 'Pagamento confirmado! Liberando seu acesso...' : 'Pagamento não concluído. Você pode tentar de novo quando quiser.');
+    window.history.replaceState(null, '', window.location.pathname);
   }, []);
 
   // Fotos de progresso registradas antes de irem para a nuvem: envia enquanto ainda existem no aparelho.
@@ -198,15 +213,20 @@ function AuthGate() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer theme={navigationTheme}>
-        {!firebaseUser ? (
-          <AuthNavigator />
-        ) : (
-          <AppLockGate>
-            {showPaywall ? <SubscriptionScreen /> : showOnboarding ? <OnboardingWizard /> : <RootNavigator />}
-          </AppLockGate>
-        )}
-      </NavigationContainer>
+      {/* No navegador o app fica numa coluna com largura de celular, centralizada na janela. */}
+      <View style={styles.webBackdrop}>
+        <View style={styles.appFrame}>
+          <NavigationContainer theme={navigationTheme}>
+            {!firebaseUser ? (
+              <AuthNavigator />
+            ) : (
+              <AppLockGate>
+                {showPaywall ? <SubscriptionScreen /> : showOnboarding ? <OnboardingWizard /> : <RootNavigator />}
+              </AppLockGate>
+            )}
+          </NavigationContainer>
+        </View>
+      </View>
       <ToastHost />
       <StatusBar style={isDarkTheme ? 'light' : 'dark'} />
     </SafeAreaProvider>
@@ -228,6 +248,8 @@ function FirebaseSetupNeeded() {
 }
 
 const styles = StyleSheet.create({
+  webBackdrop: { flex: 1, backgroundColor: colors.background },
+  appFrame: { flex: 1, width: '100%', maxWidth: Platform.OS === 'web' ? 520 : undefined, alignSelf: 'center' },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background, gap: 12 },
   loadingText: { color: colors.textSecondary, fontSize: 14 },
   setupContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background, padding: spacing.xl, gap: spacing.sm },

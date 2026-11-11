@@ -38,9 +38,9 @@ import { signOutUser } from '../../firebase/auth';
 import { ActivityLevel, Sex } from '../../types';
 import { ACTIVITY_LEVEL_LABELS, ACTIVITY_OPTIONS, PACE_OPTIONS, SEX_LABELS, SEX_OPTIONS } from '../../shared/nutritionCalc';
 import { getBiometricLockEnabled, isBiometricHardwareAvailable, setBiometricLockEnabled } from '../../shared/appLock';
-import { useSubscriptionStore } from '../../store/useSubscriptionStore';
-import { daysLeft } from '../../firebase/subscription';
+import { SubscriptionSection, useSubscriptionHint } from '../subscription/SubscriptionSection';
 import { DeleteAccountModal } from './DeleteAccountModal';
+import { formatCm, formatDecimal, formatDecimalInput, formatKg } from '../../shared/format';
 
 const SYMPTOM_TAGS: SymptomTag[] = ['nausea', 'fadiga', 'dor_de_cabeca', 'constipacao', 'outro'];
 
@@ -53,8 +53,7 @@ export function ProfileScreen() {
   const refreshMedication = useAppStore((s) => s.refreshMedication);
   const bump = useAppStore((s) => s.bump);
 
-  const subscription = useSubscriptionStore((s) => s.subscription);
-  const subscriptionStatus = useSubscriptionStore((s) => s.status);
+  const subscriptionHint = useSubscriptionHint();
 
   const [editing, setEditing] = useState(false);
   const [deleteAccountVisible, setDeleteAccountVisible] = useState(false);
@@ -99,9 +98,9 @@ export function ProfileScreen() {
     if (!user) return;
     setName(user.name);
     setAge(user.age ? String(user.age) : '');
-    setHeightCm(user.heightCm ? String(user.heightCm) : '');
-    setStartWeightKg(user.startWeightKg ? String(user.startWeightKg) : '');
-    setGoalWeightKg(user.goalWeightKg ? String(user.goalWeightKg) : '');
+    setHeightCm(user.heightCm ? formatDecimalInput(user.heightCm) : '');
+    setStartWeightKg(user.startWeightKg ? formatDecimalInput(user.startWeightKg) : '');
+    setGoalWeightKg(user.goalWeightKg ? formatDecimalInput(user.goalWeightKg) : '');
     setDailyWaterGoalMl(String(user.dailyWaterGoalMl));
     setCupSizeMl(String(user.cupSizeMl));
     setSex(user.sex);
@@ -224,24 +223,6 @@ export function ProfileScreen() {
   const initial = displayName.charAt(0).toUpperCase();
   const notificationsActive = [user.notifyDose, user.notifyWater, user.notifyMeal, user.notifyActivity].filter(Boolean).length;
 
-  const remaining = daysLeft(subscription);
-  const expiresLabel = subscription?.expiresAt ? subscription.expiresAt.toDate().toLocaleDateString('pt-BR') : null;
-  const subscriptionHint =
-    subscriptionStatus === 'trial'
-      ? `Teste grátis · ${remaining === 0 ? 'vence hoje' : `${remaining} ${remaining === 1 ? 'dia' : 'dias'}`}`
-      : subscriptionStatus === 'active'
-        ? expiresLabel
-          ? `Ativa até ${expiresLabel}`
-          : 'Ativa'
-        : 'Inativa';
-  const subscriptionDetail =
-    subscriptionStatus === 'trial'
-      ? `Você está no teste grátis${expiresLabel ? ` até ${expiresLabel}` : ''}. Para continuar registrando e usando a IA depois disso, assine o apliKI.`
-      : subscriptionStatus === 'active'
-        ? expiresLabel
-          ? `Sua assinatura está ativa até ${expiresLabel}. Obrigado por apoiar o apliKI!`
-          : 'Sua assinatura está ativa e não tem data de vencimento. Obrigado por apoiar o apliKI!'
-        : 'Sua assinatura não está ativa.';
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -270,9 +251,9 @@ export function ProfileScreen() {
             </View>
           </View>
           <View style={styles.statsRow}>
-            <Stat label="Peso atual" value={user.currentWeightKg ? `${user.currentWeightKg} kg` : '—'} />
-            <Stat label="Meta" value={user.goalWeightKg ? `${user.goalWeightKg} kg` : '—'} />
-            <Stat label="Altura" value={user.heightCm ? `${user.heightCm} cm` : '—'} />
+            <Stat label="Peso atual" value={user.currentWeightKg ? formatKg(user.currentWeightKg) : '—'} />
+            <Stat label="Meta" value={user.goalWeightKg ? formatKg(user.goalWeightKg) : '—'} />
+            <Stat label="Altura" value={user.heightCm ? formatCm(user.heightCm) : '—'} />
           </View>
         </Card>
 
@@ -283,7 +264,9 @@ export function ProfileScreen() {
             <TextField label="Idade" keyboardType="number-pad" value={age} onChangeText={setAge} />
             <TextField label="Altura (cm)" keyboardType="decimal-pad" value={heightCm} onChangeText={setHeightCm} />
             <TextField label="Peso inicial (kg)" keyboardType="decimal-pad" value={startWeightKg} onChangeText={setStartWeightKg} />
-            <Text style={styles.readonlyLabel}>Peso atual: {user.currentWeightKg ?? '—'} kg (atualizado ao registrar peso)</Text>
+            <Text style={styles.readonlyLabel}>
+              Peso atual: {user.currentWeightKg ? formatKg(user.currentWeightKg) : '—'} (atualizado ao registrar peso)
+            </Text>
             <TextField label="Peso meta (kg)" keyboardType="decimal-pad" value={goalWeightKg} onChangeText={setGoalWeightKg} />
 
             <Text style={[typography.label, { marginBottom: spacing.xs }]}>Como você se identifica</Text>
@@ -303,7 +286,7 @@ export function ProfileScreen() {
             <Text style={[typography.label, { marginTop: spacing.sm, marginBottom: spacing.xs }]}>Ritmo desejado de perda de peso</Text>
             <View style={styles.chipRow}>
               {PACE_OPTIONS.map((p) => (
-                <Chip key={p} label={`${p} kg/semana`} selected={weeklyPaceGoalKg === p} onPress={() => setWeeklyPaceGoalKg(p)} />
+                <Chip key={p} label={`${formatDecimal(p, 2)} kg/semana`} selected={weeklyPaceGoalKg === p} onPress={() => setWeeklyPaceGoalKg(p)} />
               ))}
             </View>
 
@@ -319,7 +302,7 @@ export function ProfileScreen() {
         )}
 
         <CollapsibleSection icon="⭐" title="Assinatura" hint={subscriptionHint}>
-          <Text style={styles.detail}>{subscriptionDetail}</Text>
+          <SubscriptionSection />
         </CollapsibleSection>
 
         <CollapsibleSection icon="🔔" title="Notificações" hint={permission === 'denied' ? 'Bloqueadas no aparelho' : `${notificationsActive} de 4 ativas`}>
@@ -451,7 +434,8 @@ function NotificationRow({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg, paddingBottom: 120 },
+  // A aba Perfil nao mostra o botao "+": basta a folga normal no fim da rolagem.
+  content: { padding: spacing.lg, paddingBottom: spacing.xl },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   gearButton: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
   gearButtonActive: { backgroundColor: colors.primaryLight, borderColor: colors.primary },

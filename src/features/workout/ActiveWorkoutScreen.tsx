@@ -25,6 +25,7 @@ import { computeSessionVolume, estimateCalories } from '../../shared/workoutCalc
 import { cancelRestEndNotification, scheduleRestEndNotification } from '../../notifications/notifications';
 import { ExercisePickerModal } from './ExercisePickerModal';
 import { ExerciseInfoModal } from './ExerciseInfoModal';
+import { formatDecimalInput, formatKg } from '../../shared/format';
 
 interface WorkoutExerciseState {
   exercise: Exercise;
@@ -42,9 +43,6 @@ function buildInitialSets(templateExercise: TemplateExercise): LoggedSet[] {
   }));
 }
 
-function formatKg(value: number): string {
-  return String(value).replace('.', ',');
-}
 
 export function ActiveWorkoutScreen() {
   const navigation = useNavigation<any>();
@@ -199,7 +197,7 @@ export function ActiveWorkoutScreen() {
     bump();
     Alert.alert(
       'Treino concluído! 💪',
-      `Duração: ${durationMin} min\nVolume total: ${totalVolumeKg} kg\nCalorias estimadas: ${caloriesEstimate} kcal\n\nSalvo no seu histórico de progresso.`,
+      `Duração: ${durationMin} min\nVolume total: ${formatKg(totalVolumeKg, 1)}\nCalorias estimadas: ${caloriesEstimate} kcal\n\nSalvo no seu histórico de progresso.`,
       [{ text: 'OK', onPress: () => navigation.navigate('WorkoutHome') }]
     );
   }
@@ -268,7 +266,7 @@ export function ActiveWorkoutScreen() {
                         <TextInput
                           style={styles.weightInput}
                           keyboardType="decimal-pad"
-                          value={currentSet.weightKg ? formatKg(currentSet.weightKg) : ''}
+                          value={currentSet.weightKg ? formatDecimalInput(currentSet.weightKg) : ''}
                           placeholder="0"
                           placeholderTextColor={colors.textSecondary}
                           onChangeText={(t) => updateSet(exIndex, currentSetIndex, { weightKg: parseFloat(t.replace(',', '.')) || 0 })}
@@ -311,11 +309,11 @@ export function ActiveWorkoutScreen() {
                           onPress={() => reopenSet(exIndex, setIndex)}
                           hitSlop={{ top: 6, bottom: 6, left: 2, right: 2 }}
                           accessibilityRole="button"
-                          accessibilityLabel={`Série ${s.setNumber}: ${formatKg(s.weightKg)} kg, ${s.reps} repetições`}
+                          accessibilityLabel={`Série ${s.setNumber}: ${formatKg(s.weightKg)}, ${s.reps} repetições`}
                           accessibilityHint="Reabre a série para corrigir"
                         >
                           <Text style={styles.doneChipText}>
-                            {s.setNumber} · {formatKg(s.weightKg)}kg × {s.reps}
+                            {s.setNumber} · {formatKg(s.weightKg)} × {s.reps}
                           </Text>
                         </Pressable>
                       ) : null

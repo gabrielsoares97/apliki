@@ -17,12 +17,14 @@ import { ErrorState, LoadingState } from '../../shared/components/ScreenState';
 import { ProgressRing } from '../../shared/components/ProgressRing';
 import { ProgressBar } from '../../shared/components/ProgressBar';
 import { colors, radius, spacing, typography } from '../../shared/theme';
+import { FAB_CLEARANCE } from '../dashboard/QuickAddFab';
 import { useAppStore } from '../../store/useAppStore';
 import { mealRepository } from '../../db/repositories';
 import { MealLog } from '../../types';
 import { startOfDay, endOfDay, addDays, formatDatePt, isSameDay } from '../../shared/date';
 import { MEAL_CATEGORY_LABELS } from '../../shared/labels';
 import { MealFormModal } from './MealFormModal';
+import { formatDecimal } from '../../shared/format';
 
 export function NutritionScreen() {
   const navigation = useNavigation<any>();
@@ -190,7 +192,7 @@ export function NutritionScreen() {
                       <Text style={styles.mealCategory}>{MEAL_CATEGORY_LABELS[meal.category]}</Text>
                       <Text style={typography.subtitle}>{meal.name}</Text>
                       <Text style={styles.detail}>
-                        {meal.calories} kcal · P {meal.protein}g · C {meal.carb}g · G {meal.fat}g · F {meal.fiber}g
+                        {formatDecimal(meal.calories)} kcal · P {formatDecimal(meal.protein)}g · C {formatDecimal(meal.carb)}g · G {formatDecimal(meal.fat)}g · F {formatDecimal(meal.fiber)}g
                       </Text>
                     </View>
                     {meal.isFavorite && <Text style={{ fontSize: 16 }}>⭐</Text>}
@@ -230,7 +232,7 @@ function MacroRow({ label, value, goal, color }: { label: string; value: number;
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg, paddingBottom: 120 },
+  content: { padding: spacing.lg, paddingBottom: FAB_CLEARANCE },
   dateNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, marginTop: spacing.sm },
   navArrow: { fontSize: 28, lineHeight: 32, color: colors.primary, fontWeight: '700' },
   dateLabel: { ...typography.subtitle, minWidth: 140, textAlign: 'center' },

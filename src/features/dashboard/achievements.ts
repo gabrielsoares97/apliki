@@ -5,6 +5,8 @@
  * serviço e usar sistemas de IA para copiar, reescrever ou portar esta lógica para fora do apliKI
  * (veja AI_POLICY.md).
  */
+import { formatKg } from '../../shared/format';
+
 export interface Achievement {
   key: string;
   emoji: string;
@@ -27,7 +29,7 @@ export function computeAchievements(streak: number, startWeightKg: number | null
   const lostKg = startWeightKg && currentWeightKg ? startWeightKg - currentWeightKg : 0;
   const nextLoss = WEIGHT_LOSS_MILESTONES.find((m) => m > lostKg);
   WEIGHT_LOSS_MILESTONES.filter((m) => m <= lostKg || m === nextLoss).forEach((m) => {
-    achievements.push({ key: `loss-${m}`, emoji: '⭐', label: `-${m}kg`, unlocked: lostKg >= m });
+    achievements.push({ key: `loss-${m}`, emoji: '⭐', label: `-${formatKg(m)}`, unlocked: lostKg >= m });
   });
 
   return achievements;

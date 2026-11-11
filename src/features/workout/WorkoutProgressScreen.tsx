@@ -18,6 +18,8 @@ import { workoutSessionRepository } from '../../db/repositories';
 import { WorkoutSession } from '../../types';
 import { formatShortDatePt } from '../../shared/date';
 import { getExerciseById } from '../../shared/exerciseCatalog';
+import { thinChartLabels } from '../../shared/chartLabels';
+import { formatKg } from '../../shared/format';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -53,7 +55,7 @@ export function WorkoutProgressScreen() {
 
   const chartSessions = useMemo(() => [...sessions].reverse().slice(-10), [sessions]);
   const chartData = {
-    labels: chartSessions.map((s) => formatShortDatePt(new Date(s.dateTime)).slice(0, 5)),
+    labels: thinChartLabels(chartSessions.map((s) => formatShortDatePt(new Date(s.dateTime)).slice(0, 5))),
     datasets: [{ data: chartSessions.length > 0 ? chartSessions.map((s) => s.totalVolumeKg) : [0] }],
   };
 
@@ -109,6 +111,7 @@ export function WorkoutProgressScreen() {
                   propsForDots: { r: '4', strokeWidth: '2', stroke: colors.primary },
                 }}
                 bezier
+                withVerticalLines={false}
                 style={{ borderRadius: radius.smd }}
               />
             ) : (
@@ -134,7 +137,7 @@ export function WorkoutProgressScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={styles.historyName}>{session.name}</Text>
                     <Text style={styles.historyDetail}>
-                      {formatShortDatePt(new Date(session.dateTime))} · {session.durationMin}min · {session.totalVolumeKg}kg · {session.caloriesEstimate}kcal
+                      {formatShortDatePt(new Date(session.dateTime))} · {session.durationMin} min · {formatKg(session.totalVolumeKg, 1)} · {session.caloriesEstimate} kcal
                     </Text>
                   </View>
                   <Text style={styles.chevron}>{expanded ? '⌃' : '⌄'}</Text>
@@ -144,7 +147,7 @@ export function WorkoutProgressScreen() {
                     <View key={`${logged.exerciseId}-${i}`} style={styles.exerciseBlock}>
                       <Text style={styles.exerciseTitle}>{getExerciseById(logged.exerciseId)?.name ?? 'Exercício'}</Text>
                       <Text style={styles.historyDetail}>
-                        {logged.sets.map((s) => `${String(s.weightKg).replace('.', ',')}kg × ${s.reps}`).join('  ·  ')}
+                        {logged.sets.map((s) => `${formatKg(s.weightKg)} × ${s.reps}`).join('  ·  ')}
                       </Text>
                     </View>
                   ))}

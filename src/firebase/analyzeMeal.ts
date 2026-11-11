@@ -6,6 +6,7 @@
  * (veja AI_POLICY.md).
  */
 import { auth } from './config';
+import { API_URL } from './api';
 
 export interface AnalyzeMealItem {
   name: string;
@@ -40,7 +41,7 @@ export interface AnalyzeMealOutput {
  * URL do Worker do Cloudflare (grátis) que faz a chamada à API paga da Claude mantendo a chave no
  * servidor (código em cloudflare-worker/). O Worker calcula cada alimento com a sua quantidade e soma o total.
  */
-const AI_WORKER_URL = 'https://monju-ai-worker.apliki.workers.dev';
+const AI_WORKER_URL = API_URL;
 
 export async function analyzeMeal(input: AnalyzeMealInput): Promise<AnalyzeMealOutput> {
   const user = auth.currentUser;

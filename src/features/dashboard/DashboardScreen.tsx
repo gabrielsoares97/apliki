@@ -10,6 +10,7 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { colors, radius, spacing } from '../../shared/theme';
+import { FAB_CLEARANCE } from './QuickAddFab';
 import { useAppStore } from '../../store/useAppStore';
 import { CardAction } from '../../shared/components/CardParts';
 import { LoadingState } from '../../shared/components/ScreenState';
@@ -24,6 +25,7 @@ import { TodayEntriesList } from './components/TodayEntriesList';
 import { AchievementsRow } from './components/AchievementsRow';
 import { EloCard } from './components/EloCard';
 import { FocusCard } from './components/FocusCard';
+import { TrialBanner } from '../subscription/TrialBanner';
 import { FocusItem, getFocusItems } from './focus';
 import { logWaterWithUndo } from '../../shared/quickActions';
 import { DoseFormModal } from '../dose/DoseFormModal';
@@ -261,6 +263,7 @@ export function DashboardScreen() {
           <OnboardingChecklist items={checklistItems} onDismiss={() => patchUser({ onboardingDismissed: true })} />
         )}
 
+        <TrialBanner />
         <FocusCard items={focusItems} onAction={handleFocusAction} />
 
         <Text style={styles.sectionTitle}>Seu progresso</Text>
@@ -316,7 +319,7 @@ export function DashboardScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   header: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
-  listContent: { paddingHorizontal: spacing.lg, paddingBottom: 120 },
+  listContent: { paddingHorizontal: spacing.lg, paddingBottom: FAB_CLEARANCE },
   reorderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
   sectionTitle: { fontSize: 13, fontWeight: '700', color: colors.textSecondary, letterSpacing: 0.3, marginBottom: spacing.sm },
   cardSlot: { marginBottom: spacing.md },

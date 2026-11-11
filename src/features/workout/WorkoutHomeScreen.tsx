@@ -13,12 +13,14 @@ import { Card } from '../../shared/components/Card';
 import { EmptyState } from '../../shared/components/EmptyState';
 import { ErrorState, LoadingState } from '../../shared/components/ScreenState';
 import { colors, radius, spacing, typography } from '../../shared/theme';
+import { FAB_CLEARANCE } from '../dashboard/QuickAddFab';
 import { workoutSessionRepository } from '../../db/repositories';
 import { MuscleGroup, WorkoutSession } from '../../types';
 import { MuscleIcon } from '../../shared/components/MuscleIcon';
 import { computeMuscleRecovery } from '../../shared/workoutCalc';
 import { MUSCLE_GROUP_LABELS } from '../../shared/labels';
 import { formatShortDatePt } from '../../shared/date';
+import { formatKg } from '../../shared/format';
 
 /** Nomes curtos para caber em 4 colunas. */
 const MUSCLE_GROUP_SHORT_LABELS: Partial<Record<MuscleGroup, string>> = {
@@ -142,7 +144,7 @@ export function WorkoutHomeScreen() {
               <Card key={session.id} style={{ marginBottom: spacing.sm }}>
                 <Text style={styles.sessionName}>{session.name}</Text>
                 <Text style={styles.sessionDetail}>
-                  {formatShortDatePt(new Date(session.dateTime))} · {session.durationMin}min · {session.totalVolumeKg}kg
+                  {formatShortDatePt(new Date(session.dateTime))} · {session.durationMin} min · {formatKg(session.totalVolumeKg, 1)}
                 </Text>
               </Card>
             ))}
@@ -164,10 +166,13 @@ function ActionCard({ emoji, label, onPress }: { emoji: string; label: string; o
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg, paddingBottom: 120 },
-  recoveryGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: spacing.sm },
+  content: { padding: spacing.lg, paddingBottom: FAB_CLEARANCE },
+  // 4 colunas de 23,4% + 3 espacos de 2% = 99,6% (a sobra evita que um arredondamento jogue a 4a coluna para
+  // a linha de baixo). Sem `space-between`: a ultima linha, quando incompleta, fica alinhada a esquerda com o
+  // mesmo espaco das outras em vez de abrir um buraco no meio.
+  recoveryGrid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: '2%', rowGap: spacing.sm },
   recoveryTile: {
-    width: '23.5%',
+    width: '23.4%',
     backgroundColor: colors.card,
     borderRadius: radius.md,
     paddingVertical: spacing.sm,

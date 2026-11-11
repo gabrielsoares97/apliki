@@ -14,6 +14,7 @@ import { initializeAuth, getAuth, type Auth } from 'firebase/auth';
 import { getReactNativePersistence } from '@firebase/auth';
 import { initializeFirestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 /**
  * Cole aqui o objeto `firebaseConfig` copiado do Console do Firebase:
@@ -33,6 +34,8 @@ export const isFirebaseConfigured = firebaseConfig.apiKey !== 'SUA_API_KEY_AQUI'
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 function createAuth(): Auth {
+  // No navegador o Firebase já guarda a sessão sozinho; a persistência do React Native só existe no celular.
+  if (Platform.OS === 'web') return getAuth(app);
   try {
     return initializeAuth(app, { persistence: getReactNativePersistence(AsyncStorage) });
   } catch {

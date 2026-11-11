@@ -23,6 +23,7 @@ import { newId } from '../../db/database';
 import { useAppStore } from '../../store/useAppStore';
 import { suggestNextApplicationSite } from '../../shared/applicationSite';
 import { syncMedicationWithDoses } from './doseSync';
+import { formatDecimalInput } from '../../shared/format';
 
 interface DoseFormModalProps {
   visible: boolean;
@@ -53,7 +54,7 @@ export function DoseFormModal({ visible, onClose, onSaved, editingDose }: DoseFo
 
   useEffect(() => {
     if (visible) {
-      setDoseMg(editingDose ? String(editingDose.doseMg) : medication ? String(medication.defaultDoseMg) : '');
+      setDoseMg(editingDose ? formatDecimalInput(editingDose.doseMg) : medication ? formatDecimalInput(medication.defaultDoseMg) : '');
       setDateTime(editingDose ? new Date(editingDose.dateTime) : new Date());
       setNotes(editingDose?.notes ?? '');
 

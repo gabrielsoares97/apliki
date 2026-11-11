@@ -4,7 +4,7 @@
     "slug": "monjuapp",
     "owner": "gabrielgraciesoares",
     "scheme": "monju",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -24,10 +24,17 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.SCHEDULE_EXACT_ALARM",
         "android.permission.USE_EXACT_ALARM"
-      ]
+      ],
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "name": "apliKI",
+      "shortName": "apliKI",
+      "lang": "pt-BR",
+      "themeColor": "#12151A",
+      "backgroundColor": "#12151A",
+      "description": "Acompanhamento do tratamento semanal com GLP-1: dose, peso, água, nutrição com IA e treinos."
     },
     "plugins": [
       "expo-sharing",
@@ -48,7 +55,9 @@
         "expo-media-library",
         {
           "savePhotosPermission": "O apliKI salva na sua galeria as imagens de antes e depois que você baixar.",
-          "granularPermissions": ["photo"]
+          "granularPermissions": [
+            "photo"
+          ]
         }
       ],
       [
@@ -56,7 +65,9 @@
         {
           "faceIDPermission": "O apliKI usa Face ID para proteger o acesso aos seus dados de saúde."
         }
-      ]
+      ],
+      "@react-native-google-signin/google-signin",
+      "expo-web-browser"
     ],
     "extra": {
       "eas": {

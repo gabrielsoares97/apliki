@@ -23,6 +23,7 @@ import { colors, radius, spacing, typography } from '../../shared/theme';
 import { weightRepository } from '../../db/repositories';
 import { PhotoAngle, WeightLog } from '../../types';
 import { formatShortDatePt } from '../../shared/date';
+import { formatKg } from '../../shared/format';
 
 const ANGLES: { key: PhotoAngle; label: string }[] = [
   { key: 'front', label: 'Frente' },
@@ -288,9 +289,9 @@ export function BeforeAfterScreen() {
             style={styles.dateRow}
             onPress={() => selectFor(pickerFor!, log)}
             accessibilityRole="button"
-            accessibilityLabel={`${formatShortDatePt(new Date(log.dateTime))}, ${log.weightKg} kg`}
+            accessibilityLabel={`${formatShortDatePt(new Date(log.dateTime))}, ${formatKg(log.weightKg)}`}
           >
-            <Text style={styles.dateRowWeight}>{log.weightKg} kg</Text>
+            <Text style={styles.dateRowWeight}>{formatKg(log.weightKg)}</Text>
             <Text style={styles.dateRowDate}>{formatShortDatePt(new Date(log.dateTime))}</Text>
           </Pressable>
         ))}
@@ -378,7 +379,7 @@ function CompositeHalf({
           </View>
           <View style={[styles.caption, sizes.caption]}>
             <Text style={[styles.captionText, sizes.captionText]} allowFontScaling={false}>
-              {formatShortDatePt(new Date(side.log.dateTime))} · {side.log.weightKg} kg
+              {formatShortDatePt(new Date(side.log.dateTime))} · {formatKg(side.log.weightKg)}
             </Text>
           </View>
         </>
@@ -398,7 +399,7 @@ function SelectorButton({ label, log, onPress }: { label: string; log: WeightLog
     >
       <Text style={styles.selectorLabel}>{label}</Text>
       <Text style={styles.selectorValue}>{log ? formatShortDatePt(new Date(log.dateTime)) : 'Selecionar'}</Text>
-      {log && <Text style={styles.selectorWeight}>{log.weightKg} kg</Text>}
+      {log && <Text style={styles.selectorWeight}>{formatKg(log.weightKg)}</Text>}
       <Text style={styles.selectorChange}>Trocar data</Text>
     </Pressable>
   );

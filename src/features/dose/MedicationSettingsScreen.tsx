@@ -16,6 +16,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { createMedication } from '../../db/repositories/medicationRepository';
 import { scheduleDoseReminder } from '../../notifications/notifications';
 import { computeNextDoseAt, withPreferredTime } from '../../shared/reminderPlan';
+import { formatDecimalInput } from '../../shared/format';
 
 export function MedicationSettingsScreen() {
   const medication = useAppStore((s) => s.medication);
@@ -32,7 +33,7 @@ export function MedicationSettingsScreen() {
   useEffect(() => {
     if (medication) {
       setName(medication.name);
-      setDefaultDoseMg(String(medication.defaultDoseMg));
+      setDefaultDoseMg(formatDecimalInput(medication.defaultDoseMg));
       setFrequencyDays(String(medication.frequencyDays));
       setPreferredReminderTime(medication.preferredReminderTime);
       setDosesPerPen(medication.dosesPerPen ? String(medication.dosesPerPen) : '');

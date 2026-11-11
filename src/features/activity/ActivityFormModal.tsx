@@ -20,6 +20,7 @@ import { activityRepository } from '../../db/repositories';
 import { newId } from '../../db/database';
 import { useAppStore } from '../../store/useAppStore';
 import { ActivityLog } from '../../types';
+import { formatDecimalInput } from '../../shared/format';
 
 interface ActivityFormModalProps {
   visible: boolean;
@@ -46,8 +47,8 @@ export function ActivityFormModal({ visible, onClose, onSaved, editingActivity }
   useEffect(() => {
     if (visible) {
       setType(editingActivity?.type ?? '');
-      setDurationMin(editingActivity ? String(editingActivity.durationMin) : '');
-      setCalories(editingActivity ? String(editingActivity.calories) : '');
+      setDurationMin(editingActivity ? formatDecimalInput(editingActivity.durationMin) : '');
+      setCalories(editingActivity ? formatDecimalInput(editingActivity.calories) : '');
       setDateTime(editingActivity ? new Date(editingActivity.dateTime) : new Date());
     }
   }, [visible, editingActivity]);

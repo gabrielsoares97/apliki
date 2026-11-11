@@ -15,9 +15,14 @@ import {
   reauthenticateWithCredential,
   EmailAuthProvider,
   deleteUser,
+  sendEmailVerification,
   type User as FirebaseUser,
 } from 'firebase/auth';
 import { auth } from './config';
+import { reauthenticateWithGoogle, usesGoogleOnly } from './googleAuth';
+
+/** Senha mínima para contas novas (o Firebase aceita 6; contas antigas continuam entrando normalmente). */
+export const MIN_PASSWORD_LENGTH = 8;
 
 export type { FirebaseUser };
 
@@ -28,11 +33,11 @@ function translateAuthError(code: string): string {
     case 'auth/invalid-email':
       return 'E-mail inválido.';
     case 'auth/weak-password':
-      return 'A senha precisa ter pelo menos 6 caracteres.';
+      return `A senha precisa ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.`;
     case 'auth/user-not-found':
     case 'auth/wrong-password':
     case 'auth/invalid-credential':
-      return 'E-mail ou senha incorretos.';
+      return 'E-mail ou senha incorretos. Se você criou a conta com o Google, use "Continuar com Google".';
     case 'auth/too-many-requests':
       return 'Muitas tentativas. Aguarde um pouco e tente novamente.';
     case 'auth/operation-not-allowed':
@@ -53,6 +58,8 @@ export async function signUp(name: string, email: string, password: string): Pro
   try {
     const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
     await updateProfile(credential.user, { displayName: name.trim() });
+    // Confirmação do e-mail: não bloqueia o uso, mas garante que a pessoa consegue recuperar a conta.
+    sendEmailVerification(credential.user).catch(() => undefined);
     return credential.user;
   } catch (error) {
     rethrowFriendly(error);
@@ -72,6 +79,11 @@ export async function signOutUser(): Promise<void> {
   await firebaseSignOut(auth);
 }
 
+/** Como a conta entra: usado para pedir a confirmação certa (senha ou Google) antes de ações sensíveis. */
+export function currentUserUsesGoogle(): boolean {
+  return usesGoogleOnly(auth.currentUser);
+}
+
 export async function resetPassword(email: string): Promise<void> {
   try {
     await sendPasswordResetEmail(auth, email.trim());
@@ -81,16 +93,21 @@ export async function resetPassword(email: string): Promise<void> {
 }
 
 /**
- * Exclui a conta de vez: confirma a senha (o Firebase exige login recente), apaga todos os dados e remove o login.
+ * Exclui a conta de vez: confirma a identidade (o Firebase exige login recente), apaga todos os dados e remove o login.
+ * Contas com senha confirmam pela senha; contas que entram só pelo Google confirmam pelo Google (`password` é ignorada).
  * Os dados são apagados antes do login porque, sem login, as regras do Firestore não deixam mais apagá-los.
  */
 export async function deleteAccount(password: string, deleteData: (uid: string) => Promise<void>): Promise<void> {
   const user = auth.currentUser;
   if (!user?.email) throw new Error('Usuário não autenticado.');
-  try {
-    await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password));
-  } catch (error) {
-    rethrowFriendly(error);
+  if (usesGoogleOnly(user)) {
+    await reauthenticateWithGoogle(user);
+  } else {
+    try {
+      await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password));
+    } catch (error) {
+      rethrowFriendly(error);
+    }
   }
   await deleteData(user.uid);
   try {

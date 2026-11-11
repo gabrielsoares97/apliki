@@ -12,8 +12,10 @@ import { TextField } from '../../shared/components/TextField';
 import { Button } from '../../shared/components/Button';
 import { Alert } from '../../shared/dialog';
 import { colors, spacing, typography } from '../../shared/theme';
-import { deleteAccount } from '../../firebase/auth';
+import { currentUserUsesGoogle, deleteAccount } from '../../firebase/auth';
+import { GoogleSignInCancelled } from '../../firebase/googleAuth';
 import { deleteAllUserData } from '../../db/reset';
+import { deleteBillingData } from '../../firebase/billing';
 import { cancelAllNotifications } from '../../notifications/notifications';
 
 interface Props {
@@ -21,24 +23,31 @@ interface Props {
   onClose: () => void;
 }
 
-/** Exclusão definitiva da conta, pedindo a senha de novo para confirmar. */
+/** Exclusão definitiva da conta, confirmando a identidade de novo (senha ou conta Google). */
 export function DeleteAccountModal({ visible, onClose }: Props) {
   const [password, setPassword] = useState('');
   const [deleting, setDeleting] = useState(false);
+  // Conta que entra só pelo Google não tem senha: a confirmação é pelo próprio Google.
+  const viaGoogle = currentUserUsesGoogle();
 
   useEffect(() => {
     if (visible) setPassword('');
   }, [visible]);
 
   async function handleDelete() {
-    if (!password || deleting) return;
+    if ((!viaGoogle && !password) || deleting) return;
     setDeleting(true);
     try {
-      await deleteAccount(password, deleteAllUserData);
+      // Primeiro o servidor cancela a assinatura paga (se houver); só depois os dados e o login são apagados.
+      await deleteAccount(password, async (uid) => {
+        await deleteBillingData();
+        await deleteAllUserData(uid);
+      });
       await cancelAllNotifications();
       // O listener de autenticação leva o app de volta para a tela de login.
     } catch (error) {
       setDeleting(false);
+      if (error instanceof GoogleSignInCancelled) return;
       Alert.alert('Não foi possível excluir a conta', error instanceof Error ? error.message : 'Tente novamente.');
     }
   }
@@ -50,23 +59,28 @@ export function DeleteAccountModal({ visible, onClose }: Props) {
         lembretes e sintomas. Não dá para desfazer.
       </Text>
       <Text style={styles.hint}>
-        Se quiser guardar uma cópia, exporte seus dados em PDF ou CSV antes. Assinaturas pagas não são reembolsadas
-        automaticamente.
+        Se quiser guardar uma cópia, exporte seus dados em PDF ou CSV antes. Se você tem uma assinatura paga, ela é
+        cancelada agora e não haverá novas cobranças; valores já pagos não são reembolsados automaticamente.
       </Text>
-      <TextField
-        label="Digite sua senha para confirmar"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        autoCapitalize="none"
-        autoComplete="current-password"
-        textContentType="password"
-        editable={!deleting}
-      />
+      {viaGoogle ? (
+        <Text style={styles.hint}>Para confirmar, o Google vai pedir que você escolha a sua conta de novo.</Text>
+      ) : (
+        <TextField
+          label="Digite sua senha para confirmar"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          autoCapitalize="none"
+          autoComplete="current-password"
+          textContentType="password"
+          editable={!deleting}
+        />
+      )}
       <Button
-        label={deleting ? 'Excluindo...' : 'Excluir minha conta'}
+        label={viaGoogle ? 'Confirmar com o Google e excluir' : 'Excluir minha conta'}
         variant="danger"
-        disabled={!password || deleting}
+        loading={deleting}
+        disabled={!viaGoogle && !password}
         onPress={handleDelete}
       />
     </ModalSheet>

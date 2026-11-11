@@ -130,8 +130,12 @@ const TAB_ICONS: Record<string, TabIconName> = {
   PerfilTab: 'perfil',
 };
 
-/** Telas onde o botao "+" atrapalha (registro em andamento / formularios de tela cheia). */
-const FAB_HIDDEN_ROUTES = ['ActiveWorkout', 'WorkoutBuilder', 'PrivacyPolicy'];
+/**
+ * O botao "+" so aparece na tela inicial das abas de registro. Na aba Perfil e nas telas abertas por cima
+ * (Peso, Antes e depois, Elo, lembretes, treino em andamento...) ele so cobriria o conteudo e os botoes do fim.
+ * Toda tela desta lista reserva `FAB_CLEARANCE` no fim da rolagem.
+ */
+const FAB_VISIBLE_ROUTES = ['Dashboard', 'Nutrition', 'WorkoutHome', 'DosesList'];
 
 export function RootNavigator() {
   // Fora de um navegador, useNavigation devolve a referencia do container raiz, que enxerga a rota focada.
@@ -139,7 +143,11 @@ export function RootNavigator() {
   const [fabHidden, setFabHidden] = useState(false);
 
   useEffect(() => {
-    const update = () => setFabHidden(FAB_HIDDEN_ROUTES.includes(rootNavigation.getCurrentRoute?.()?.name));
+    const update = () => {
+      // Antes de o navegador montar ainda nao ha rota: a primeira tela e o painel inicial, que mostra o "+".
+      const routeName: string | undefined = rootNavigation.getCurrentRoute?.()?.name;
+      setFabHidden(routeName !== undefined && !FAB_VISIBLE_ROUTES.includes(routeName));
+    };
     update();
     return rootNavigation.addListener('state', update);
   }, [rootNavigation]);

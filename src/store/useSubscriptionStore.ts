@@ -8,6 +8,7 @@
 import { create } from 'zustand';
 import {
   effectiveStatus,
+  subscribeToPaidSubscription,
   subscribeToSubscription,
   type EffectiveStatus,
   type Subscription,
@@ -16,6 +17,8 @@ import {
 interface SubscriptionState {
   subscription: Subscription | null;
   status: EffectiveStatus;
+  /** Existe assinatura paga em andamento na Stripe (mesmo que o acesso atual venha de uma liberação manual). */
+  hasPaidSubscription: boolean;
   /** true até a primeira leitura da assinatura chegar. */
   loading: boolean;
   /** Acompanha a assinatura em tempo real: quando o admin ativa a conta, o app libera na hora. */
@@ -28,16 +31,22 @@ interface SubscriptionState {
 export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   subscription: null,
   status: 'none',
+  hasPaidSubscription: false,
   loading: true,
 
   startListening: (uid) => {
     set({ loading: true });
-    return subscribeToSubscription(
+    const stopSubscription = subscribeToSubscription(
       uid,
       (subscription) => set({ subscription, status: effectiveStatus(subscription), loading: false }),
       // Erro do listener: mantém o que já se sabia (o servidor continua barrando gravações sem assinatura).
       () => set({ status: effectiveStatus(get().subscription), loading: false })
     );
+    const stopBilling = subscribeToPaidSubscription(uid, (hasPaidSubscription) => set({ hasPaidSubscription }));
+    return () => {
+      stopSubscription();
+      stopBilling();
+    };
   },
 
   recompute: () => {
@@ -45,5 +54,5 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     if (next !== get().status) set({ status: next });
   },
 
-  clear: () => set({ subscription: null, status: 'none', loading: true }),
+  clear: () => set({ subscription: null, status: 'none', hasPaidSubscription: false, loading: true }),
 }));

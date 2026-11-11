@@ -12,6 +12,7 @@ import { ModalSheet } from '../../shared/components/ModalSheet';
 import { colors, radius, spacing, typography } from '../../shared/theme';
 import { PhotoAngle, WeightLog } from '../../types';
 import { formatShortDatePt } from '../../shared/date';
+import { formatCm, formatKg } from '../../shared/format';
 
 const ANGLES: { key: PhotoAngle; label: string }[] = [
   { key: 'front', label: 'Frente' },
@@ -35,12 +36,12 @@ export function WeightDayDetailModal({ log, onClose }: WeightDayDetailModalProps
     <ModalSheet visible={log !== null} title={log ? formatShortDatePt(new Date(log.dateTime)) : ''} onClose={onClose}>
       {log && (
         <>
-          <Text style={styles.weight}>{log.weightKg} kg</Text>
+          <Text style={styles.weight}>{formatKg(log.weightKg)}</Text>
           {(log.waistCm || log.hipCm || log.armCm) && (
             <View style={styles.measurementsRow}>
-              {log.waistCm && <Text style={styles.measurement}>Cintura: {log.waistCm}cm</Text>}
-              {log.hipCm && <Text style={styles.measurement}>Quadril: {log.hipCm}cm</Text>}
-              {log.armCm && <Text style={styles.measurement}>Braço: {log.armCm}cm</Text>}
+              {!!log.waistCm && <Text style={styles.measurement}>Cintura: {formatCm(log.waistCm)}</Text>}
+              {!!log.hipCm && <Text style={styles.measurement}>Quadril: {formatCm(log.hipCm)}</Text>}
+              {!!log.armCm && <Text style={styles.measurement}>Braço: {formatCm(log.armCm)}</Text>}
             </View>
           )}
           <View style={styles.photoRow}>

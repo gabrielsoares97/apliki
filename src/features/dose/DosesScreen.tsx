@@ -15,14 +15,26 @@ import { Button } from '../../shared/components/Button';
 import { EmptyState } from '../../shared/components/EmptyState';
 import { ErrorState, LoadingState } from '../../shared/components/ScreenState';
 import { colors, radius, spacing, typography } from '../../shared/theme';
+import { FAB_CLEARANCE } from '../dashboard/QuickAddFab';
 import { doseRepository } from '../../db/repositories';
 import { useAppStore } from '../../store/useAppStore';
 import { DoseLog } from '../../types';
 import { formatShortDatePt, formatTimePt } from '../../shared/date';
 import { APPLICATION_SITE_LABELS } from '../../shared/labels';
+import { dotToComma, formatMg } from '../../shared/format';
 import { DoseFormModal } from './DoseFormModal';
 
 const screenWidth = Dimensions.get('window').width;
+const chartWidth = screenWidth - spacing.lg * 2 - spacing.md * 2;
+/** Faixa que o grafico reserva a esquerda para os valores do eixo Y (padrao da react-native-chart-kit). */
+const CHART_Y_AXIS_WIDTH = 64;
+/**
+ * Largura minima da faixa de cada barra. A data "dd/mm" fica centralizada embaixo da barra: com menos que
+ * isso as datas encostam umas nas outras e a ultima e cortada pela borda direita do grafico.
+ */
+const CHART_MIN_SLOT_WIDTH = 38;
+/** Quantas doses cabem no grafico desta tela (no maximo as 8 mais recentes). */
+const CHART_MAX_DOSES = Math.max(3, Math.min(8, Math.floor((chartWidth - CHART_Y_AXIS_WIDTH) / CHART_MIN_SLOT_WIDTH)));
 
 export function DosesScreen() {
   const navigation = useNavigation<any>();
@@ -56,11 +68,15 @@ export function DosesScreen() {
     }, [load, version])
   );
 
-  const chartDoses = doses.slice(0, 8).reverse();
+  const chartDoses = doses.slice(0, CHART_MAX_DOSES).reverse();
   const chartData = {
     labels: chartDoses.map((d) => formatShortDatePt(new Date(d.dateTime)).slice(0, 5)),
     datasets: [{ data: chartDoses.length > 0 ? chartDoses.map((d) => d.doseMg) : [0] }],
   };
+  // A barra padrao tem 32px e nao encolhe sozinha: com muitas doses elas se sobrepoem e a ultima sai do grafico.
+  // Aqui cada barra ocupa no maximo metade da propria faixa, o que a deixa centralizada sobre a data.
+  const chartSlotWidth = (chartWidth - CHART_Y_AXIS_WIDTH) / Math.max(chartDoses.length, 1);
+  const chartBarPercentage = Math.min(1, chartSlotWidth / 64);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -81,7 +97,9 @@ export function DosesScreen() {
             {medication && (
               <Card style={{ marginTop: spacing.sm }}>
                 <Text style={typography.subtitle}>{medication.name}</Text>
-                <Text style={styles.detail}>Dose padrão: {medication.defaultDoseMg}mg · a cada {medication.frequencyDays} dias</Text>
+                <Text style={styles.detail}>
+                  Dose padrão: {formatMg(medication.defaultDoseMg)} · a cada {medication.frequencyDays} {medication.frequencyDays === 1 ? 'dia' : 'dias'}
+                </Text>
               </Card>
             )}
 
@@ -90,7 +108,7 @@ export function DosesScreen() {
               {chartDoses.length >= 2 ? (
                 <BarChart
                   data={chartData}
-                  width={screenWidth - spacing.lg * 2 - spacing.md * 2}
+                  width={chartWidth}
                   height={180}
                   yAxisLabel=""
                   yAxisSuffix="mg"
@@ -101,6 +119,8 @@ export function DosesScreen() {
                     decimalPlaces: 1,
                     color: () => colors.primary,
                     labelColor: () => colors.textSecondary,
+                    barPercentage: chartBarPercentage,
+                    formatYLabel: dotToComma,
                   }}
                   style={{ borderRadius: radius.smd, marginTop: spacing.sm }}
                   fromZero
@@ -129,7 +149,7 @@ export function DosesScreen() {
             {doses.map((dose) => (
               <Card key={dose.id} style={{ marginBottom: spacing.sm }}>
                 <View style={styles.doseRow}>
-                  <Text style={styles.doseValue}>{dose.doseMg}mg</Text>
+                  <Text style={styles.doseValue}>{formatMg(dose.doseMg)}</Text>
                   <Text style={styles.doseDate}>
                     {formatShortDatePt(new Date(dose.dateTime))} · {formatTimePt(new Date(dose.dateTime))}
                   </Text>
@@ -149,7 +169,7 @@ export function DosesScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg, paddingBottom: 120 },
+  content: { padding: spacing.lg, paddingBottom: FAB_CLEARANCE },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   link: { color: colors.primary, fontWeight: '600', fontSize: 13 },
   detail: { color: colors.textSecondary, fontSize: 13, marginTop: 4 },

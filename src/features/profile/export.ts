@@ -10,6 +10,7 @@ import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
 import { doseRepository, weightRepository, symptomRepository } from '../../db/repositories';
 import { formatDateTimePt } from '../../shared/date';
+import { formatKg, formatMg } from '../../shared/format';
 import { APPLICATION_SITE_LABELS, SYMPTOM_TAG_LABELS } from '../../shared/labels';
 import { User } from '../../types';
 
@@ -30,6 +31,7 @@ function htmlEscape(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
+/** CSV e lido por planilhas e programas: os numeros ficam como estao guardados (ponto decimal), sem formatacao pt-BR. */
 async function buildCsv(): Promise<string> {
   const [doses, weights, symptoms] = await Promise.all([
     doseRepository.listAll(),
@@ -69,12 +71,14 @@ async function buildHtmlReport(user: User): Promise<string> {
   ]);
 
   const doseRows = doses
-    .map((d) => `<tr><td>${formatDateTimePt(new Date(d.dateTime))}</td><td>${d.doseMg}mg</td><td>${d.applicationSite ? APPLICATION_SITE_LABELS[d.applicationSite] : '-'}</td></tr>`)
+    .map((d) => `<tr><td>${formatDateTimePt(new Date(d.dateTime))}</td><td>${formatMg(d.doseMg)}</td><td>${d.applicationSite ? APPLICATION_SITE_LABELS[d.applicationSite] : '-'}</td></tr>`)
     .join('');
-  const weightRows = weights.map((w) => `<tr><td>${formatDateTimePt(new Date(w.dateTime))}</td><td>${w.weightKg}kg</td></tr>`).join('');
+  const weightRows = weights.map((w) => `<tr><td>${formatDateTimePt(new Date(w.dateTime))}</td><td>${formatKg(w.weightKg)}</td></tr>`).join('');
   const symptomRows = symptoms
     .map((s) => `<tr><td>${formatDateTimePt(new Date(s.dateTime))}</td><td>${s.tags.map((t) => SYMPTOM_TAG_LABELS[t]).join(', ')}</td><td>${htmlEscape(s.notes ?? '')}</td></tr>`)
     .join('');
+
+  const weightOrDash = (value: number | null | undefined) => (value != null ? formatKg(value) : '-');
 
   return `
     <html>
@@ -87,7 +91,7 @@ async function buildHtmlReport(user: User): Promise<string> {
       </style></head>
       <body>
         <h1>Relatório de acompanhamento — ${htmlEscape(user.name)}</h1>
-        <p class="meta">Peso inicial: ${user.startWeightKg ?? '-'}kg · Peso atual: ${user.currentWeightKg ?? '-'}kg · Meta: ${user.goalWeightKg ?? '-'}kg</p>
+        <p class="meta">Peso inicial: ${weightOrDash(user.startWeightKg)} · Peso atual: ${weightOrDash(user.currentWeightKg)} · Meta: ${weightOrDash(user.goalWeightKg)}</p>
 
         <h2>Histórico de doses</h2>
         <table><tr><th>Data</th><th>Dose</th><th>Local</th></tr>${doseRows || '<tr><td colspan="3">Sem registros</td></tr>'}</table>

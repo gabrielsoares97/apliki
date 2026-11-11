@@ -22,6 +22,7 @@ import { newId } from '../../db/database';
 import { useAppStore } from '../../store/useAppStore';
 import { analyzeMeal, AnalyzeMealItemOutput } from '../../firebase/analyzeMeal';
 import { FoodItem, searchFoods } from '../../shared/foodDatabase';
+import { formatDecimalInput } from '../../shared/format';
 
 interface MealFormModalProps {
   visible: boolean;
@@ -97,11 +98,11 @@ export function MealFormModal({ visible, onClose, onSaved, editingMeal, prefill 
     setFoodName('');
     setFoodQuantity('');
     setSuggestions([]);
-    setCalories(source?.calories !== undefined ? String(source.calories) : '');
-    setProtein(source?.protein !== undefined ? String(source.protein) : '');
-    setCarb(source?.carb !== undefined ? String(source.carb) : '');
-    setFat(source?.fat !== undefined ? String(source.fat) : '');
-    setFiber(source?.fiber !== undefined ? String(source.fiber) : '');
+    setCalories(source?.calories !== undefined ? formatDecimalInput(source.calories) : '');
+    setProtein(source?.protein !== undefined ? formatDecimalInput(source.protein) : '');
+    setCarb(source?.carb !== undefined ? formatDecimalInput(source.carb) : '');
+    setFat(source?.fat !== undefined ? formatDecimalInput(source.fat) : '');
+    setFiber(source?.fiber !== undefined ? formatDecimalInput(source.fiber) : '');
     setDateTime(editingMeal ? new Date(editingMeal.dateTime) : new Date());
     // Editar uma favorita nao pode tira-la dos favoritos; refeicao nova (mesmo vinda de favorita) comeca desmarcada.
     setSaveFavorite(editingMeal?.isFavorite ?? false);

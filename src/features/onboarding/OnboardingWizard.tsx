@@ -29,6 +29,7 @@ import {
   PACE_OPTIONS,
 } from '../../shared/nutritionCalc';
 import { addDays } from '../../shared/date';
+import { formatDecimal, formatDecimalInput, formatKg } from '../../shared/format';
 
 const MOTIVATION_OPTIONS = [
   'Me sentir mais confiante',
@@ -89,9 +90,9 @@ export function OnboardingWizard() {
     treatmentStage: existingUser?.treatmentStage ?? null,
     sex: existingUser?.sex ?? null,
     age: existingUser?.age ? String(existingUser.age) : '',
-    heightCm: existingUser?.heightCm ? String(existingUser.heightCm) : '',
-    currentWeightKg: existingUser?.currentWeightKg ? String(existingUser.currentWeightKg) : '',
-    goalWeightKg: existingUser?.goalWeightKg ? String(existingUser.goalWeightKg) : '',
+    heightCm: existingUser?.heightCm ? formatDecimalInput(existingUser.heightCm) : '',
+    currentWeightKg: existingUser?.currentWeightKg ? formatDecimalInput(existingUser.currentWeightKg) : '',
+    goalWeightKg: existingUser?.goalWeightKg ? formatDecimalInput(existingUser.goalWeightKg) : '',
     activityLevel: existingUser?.activityLevel ?? null,
     weeklyPaceGoalKg: existingUser?.weeklyPaceGoalKg ?? 0.5,
     motivations: existingUser?.motivations ?? [],
@@ -287,7 +288,7 @@ export function OnboardingWizard() {
                 <View style={[styles.infoBox, styles.bmiBox]}>
                   <View style={styles.infoBoxHeader}>
                     <Text style={styles.infoLabel}>IMC</Text>
-                    <Text style={styles.infoValue}>{bmi.toFixed(1)}</Text>
+                    <Text style={styles.infoValue}>{formatDecimal(bmi)}</Text>
                   </View>
                   <Text style={[styles.bmiCategory, { color: getBmiCategory(bmi).color }]}>{getBmiCategory(bmi).label}</Text>
                   <BmiGauge bmi={bmi} />
@@ -308,7 +309,7 @@ export function OnboardingWizard() {
               {currentWeightKg > 0 && goalWeightKg > 0 && (
                 <View style={styles.infoBox}>
                   <Text style={styles.infoLabel}>{currentWeightKg > goalWeightKg ? 'Para perder' : 'Para ganhar'}</Text>
-                  <Text style={styles.infoValue}>{Math.abs(currentWeightKg - goalWeightKg).toFixed(1)} kg</Text>
+                  <Text style={styles.infoValue}>{formatKg(Math.abs(currentWeightKg - goalWeightKg), 1)}</Text>
                 </View>
               )}
             </StepShell>
@@ -332,7 +333,7 @@ export function OnboardingWizard() {
             <StepShell title="Quão rápido você quer atingir sua meta?" subtitle="Ritmos mais lentos costumam ser mais sustentáveis.">
               <View style={styles.chipRow}>
                 {PACE_OPTIONS.map((p) => (
-                  <Chip key={p} label={`${p} kg/semana`} selected={draft.weeklyPaceGoalKg === p} onPress={() => update('weeklyPaceGoalKg', p)} />
+                  <Chip key={p} label={`${formatDecimal(p, 2)} kg/semana`} selected={draft.weeklyPaceGoalKg === p} onPress={() => update('weeklyPaceGoalKg', p)} />
                 ))}
               </View>
             </StepShell>
